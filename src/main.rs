@@ -1,3 +1,4 @@
+mod components;
 mod plugins;
 
 use bevy::asset::AssetMetaCheck;
@@ -5,7 +6,7 @@ use bevy::prelude::*;
 use bevy::window::PresentMode;
 use bevy_inspector_egui::bevy_egui::EguiPlugin;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use bevy_rapier3d::prelude::*;
+use bevy_rapier2d::prelude::*;
 use plugins::GamePlugin;
 
 const NAME: &'static str = "Bevy Jam 6";
@@ -30,12 +31,13 @@ fn main() {
 					}),
 					..default()
 				}),
+			#[cfg(debug_assertions)]
 			EguiPlugin {
 				enable_multipass_for_primary_context: true,
 			},
+			#[cfg(debug_assertions)]
 			WorldInspectorPlugin::new(),
 			RapierPhysicsPlugin::<NoUserData>::default(),
-			RapierDebugRenderPlugin::default(),
 			GamePlugin,
 		))
 		.run();
