@@ -1,0 +1,17 @@
+[package]
+name = "bevy-jam-6"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+
+
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 3
+
+[dependencies]
+bevy_rapier3d = { version = "0.30.0", features = ["simd-stable"] }
+bevy = "0.16"
+bevy-inspector-egui = "0.31.0"
