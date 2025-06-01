@@ -12,6 +12,8 @@ impl Plugin for TypesPlugin {
 		app.register_type::<FireRate>();
 		app.register_type::<Lifetime>();
 		app.register_type::<MoveSpeed>();
+		app.register_type::<MoveSpeedStat>();
+		app.register_type::<MoveSpeedMultiplier>();
 		app.register_type::<AI>();
 		app.register_type::<ChaseAI>();
 		app.register_type::<ChargeAI>();

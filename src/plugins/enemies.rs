@@ -1,10 +1,9 @@
 use bevy::prelude::*;
-use bevy_rapier2d::prelude::Collider;
-use bevy_rapier2d::prelude::RigidBody;
+use bevy_rapier2d::prelude::*;
 
 use crate::components::{
-	ai::{AI, AITarget, ChaseAI},
-	stats::MoveSpeed,
+	ai::{AI, AITarget, ChargeAI, ChaseAI, HoverAI},
+	stats::{MoveSpeed, MoveSpeedStat},
 	tags::Enemy,
 };
 
@@ -15,16 +14,12 @@ pub struct EnemiesPlugin;
 impl Plugin for EnemiesPlugin {
 	fn build(&self, app: &mut App) {
 		app.add_systems(Startup, init);
-		app.add_systems(Update, test);
-		app.add_systems(Update, (set_ai_target, chase_ai).chain());
-	}
-}
+		app.add_systems(Update, ((set_ai_chase_target, set_ai_hover_target), move_ai).chain());
 
-fn test(query: Query<&Transform, With<AI>>) {
-	for t in query {
-		if t.scale == Vec3::ZERO || t.scale.x.is_nan() || t.scale.y.is_nan() {
-			panic!("Zero Scale");
-		}
+		//Debugging
+		#[cfg(feature = "ai")]
+		#[cfg(debug_assertions)]
+		app.add_systems(Update, (debug_ai, debug_hover_ai));
 	}
 }
 
@@ -40,38 +35,96 @@ fn init(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials:
 			let color = Color::hsl(360.0 * (x as f32 / GRID_SIZE as f32), 1., 0.7);
 			commands.spawn((
 				Enemy,
+				ActiveEvents::COLLISION_EVENTS,
 				Name::new("Enemy"),
-				Transform::from_translation(Vec3::new(x as f32 * 10.0, y as f32 * 10.0, 0.0)),
-				RigidBody::KinematicPositionBased,
+				Transform::from_xyz(x as f32 * 10.0, y as f32 * 10.0, 0.0),
+				RigidBody::Dynamic,
 				Mesh2d(mesh.clone()),
 				MeshMaterial2d(materials.add(color)),
-				ChaseAI,
-				MoveSpeed(5.),
-				Collider::ball(8.),
+				HoverAI {
+					hover_distance: 100.,
+					range: 20.,
+				},
+				Velocity::zero(),
+				MoveSpeedStat(20.),
+				Collider::ball(4.),
 			));
 		}
 	}
 }
 
-fn chase_ai(mut query: Query<(&mut Transform, &MoveSpeed, &AI, &AITarget), With<ChaseAI>>, time: Res<Time>) {
-	for (mut transform, speed, ai, tgt) in &mut query {
+fn move_ai(mut query: Query<(&mut Transform, &mut Velocity, &MoveSpeed, &AI, &AITarget)>) {
+	for (mut transform, mut vel, speed, ai, tgt) in &mut query {
 		if ai.is_dead() {
 			continue;
 		}
-		let dir = (tgt.0 - transform.translation).normalize_or_zero();
-		if dir.length_squared() <= f32::EPSILON {
-			continue;
+		let move_dir = (tgt.move_to - transform.translation.xy()).normalize_or_zero();
+		if move_dir.length_squared() > f32::EPSILON {
+			vel.linvel = move_dir * speed.0;
 		}
-		transform.translation += dir * speed.0 * time.delta_secs();
-		transform.rotation = Quat::from_rotation_arc_2d(Vec2::Y, dir.xy());
+
+		let look_dir = (tgt.look_at - transform.translation.xy()).normalize_or_zero();
+		if look_dir.length_squared() > f32::EPSILON {
+			transform.rotation = Quat::from_rotation_arc_2d(Vec2::Y, look_dir);
+		}
 	}
 }
 
-fn set_ai_target(mut query: Query<(&AI, &mut AITarget)>, player: Single<&Transform, With<Player>>) {
-	for (ai, mut tgt) in &mut query {
+#[cfg(feature = "ai")]
+#[cfg(debug_assertions)]
+fn debug_ai(query: Query<(&Transform, &AITarget)>, mut gizmos: Gizmos) {
+	for (transform, tgt) in query {
+		gizmos.arrow_2d(transform.translation.xy(), tgt.move_to, Color::WHITE.with_alpha(0.2));
+		gizmos.circle_2d(tgt.move_to.xy(), 1.0, Color::linear_rgb(1.0, 0.0, 0.0));
+	}
+}
+
+#[cfg(feature = "ai")]
+#[cfg(debug_assertions)]
+fn debug_hover_ai(query: Query<&HoverAI>, mut gizmos: Gizmos, player: Single<&Transform, With<Player>>) {
+	for hover in query {
+		gizmos.circle_2d(
+			player.translation.xy(),
+			hover.min_distance(),
+			Color::linear_rgba(0., 0., 1.0, 0.1),
+		);
+		gizmos.circle_2d(
+			player.translation.xy(),
+			hover.max_distance(),
+			Color::linear_rgba(0., 1.0, 1.0, 0.1),
+		);
+	}
+}
+
+fn set_ai_chase_target(
+	mut query: Query<(&mut AITarget, &AI), Or<(With<ChaseAI>, With<ChargeAI>)>>,
+	player: Single<&Transform, With<Player>>,
+) {
+	for (mut tgt, ai) in &mut query {
 		if ai.is_dead() {
 			continue;
 		}
-		tgt.0 = player.translation;
+		tgt.look_and_move(player.translation.xy());
+	}
+}
+
+fn set_ai_hover_target(
+	mut query: Query<(&mut AITarget, &AI, &Transform, &HoverAI)>,
+	player: Single<&Transform, With<Player>>,
+) {
+	for (mut tgt, ai, transform, hover) in &mut query {
+		if ai.is_dead() {
+			continue;
+		}
+		let player_pos = player.translation.xy();
+		let dir = (transform.translation.xy() - player_pos).xy();
+		let dist = dir.length_squared();
+		tgt.look_at = player_pos;
+		if hover.is_in_range_squared(dist) {
+			tgt.move_to = transform.translation.xy();
+		} else {
+			let dir_normalized = dir.normalize_or(Vec2::Y);
+			tgt.move_to = player_pos + (dir_normalized * hover.hover_distance);
+		}
 	}
 }

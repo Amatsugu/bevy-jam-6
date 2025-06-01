@@ -1,4 +1,6 @@
 use bevy::prelude::*;
+use bevy_rapier2d::plugin::RapierConfiguration;
+#[cfg(debug_assertions)]
 use iyes_perf_ui::{
 	PerfUiPlugin,
 	prelude::{PerfUiEntryFPS, PerfUiEntryFrameTimeWorst, PerfUiEntryRenderGpuTime},
@@ -6,7 +8,10 @@ use iyes_perf_ui::{
 
 use crate::components::tags::MainCamera;
 
-use super::{enemies::EnemiesPlugin, hooks::HooksPlugin, player::PlayerPlugin, types::TypesPlugin, utils::UtilsPlugin};
+use super::{
+	enemies::EnemiesPlugin, hooks::HooksPlugin, player::PlayerPlugin, projectiles::ProjectilesPlugin,
+	types::TypesPlugin, utils::UtilsPlugin,
+};
 
 #[derive(Default)]
 
@@ -14,8 +19,15 @@ pub struct GamePlugin;
 
 impl Plugin for GamePlugin {
 	fn build(&self, app: &mut App) {
-		app.add_plugins((PlayerPlugin, EnemiesPlugin, HooksPlugin, TypesPlugin, UtilsPlugin));
-		app.add_systems(Startup, setup);
+		app.add_plugins((
+			PlayerPlugin,
+			EnemiesPlugin,
+			HooksPlugin,
+			TypesPlugin,
+			UtilsPlugin,
+			ProjectilesPlugin,
+		));
+		app.add_systems(Startup, (setup, disable_gravity));
 
 		#[cfg(debug_assertions)]
 		{
@@ -36,4 +48,8 @@ fn setup(mut commands: Commands) {
 		PerfUiEntryRenderGpuTime::default(),
 		PerfUiEntryFrameTimeWorst::default(),
 	));
+}
+
+fn disable_gravity(mut cfg: Single<&mut RapierConfiguration>) {
+	cfg.gravity = Vec2::ZERO;
 }

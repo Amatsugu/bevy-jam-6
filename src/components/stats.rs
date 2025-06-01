@@ -7,6 +7,19 @@ pub struct Damage(pub f32);
 pub struct MoveSpeed(pub f32);
 
 #[derive(Component, Default, Reflect)]
+#[require(MoveSpeed)]
+pub struct MoveSpeedStat(pub f32);
+
+#[derive(Component, Reflect)]
+#[require(MoveSpeedStat)]
+pub struct MoveSpeedMultiplier(pub f32);
+
+impl Default for MoveSpeedMultiplier {
+	fn default() -> Self {
+		MoveSpeedMultiplier(1.)
+	}
+}
+#[derive(Component, Default, Reflect)]
 pub struct Health(pub f32);
 
 #[derive(Component, Reflect)]

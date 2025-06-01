@@ -27,6 +27,9 @@ dev_native = [
 	# Enable embedded asset hot reloading for native dev builds.
 	"bevy/embedded_watcher",
 ]
+phys = ["dev"]
+ai = ["dev"]
+
 
 [lints.clippy]
 # Bevy supplies arguments to systems via dependency injection, so it's natural for systems to

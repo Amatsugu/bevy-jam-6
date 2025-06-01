@@ -38,6 +38,8 @@ fn main() {
 			#[cfg(debug_assertions)]
 			WorldInspectorPlugin::new(),
 			RapierPhysicsPlugin::<NoUserData>::default(),
+			#[cfg(feature = "phys")]
+			RapierDebugRenderPlugin::default(),
 			GamePlugin,
 		))
 		.run();

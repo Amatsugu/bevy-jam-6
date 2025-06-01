@@ -1,15 +1,15 @@
 use bevy::{prelude::*, window::PrimaryWindow};
-use bevy_rapier2d::prelude::{Collider, RigidBody, Velocity};
+use bevy_rapier2d::prelude::*;
 
 use crate::components::{
-	stats::{Damage, FireRate, MaxHealth, MoveSpeed},
+	stats::{Damage, FireRate, MaxHealth, MoveSpeed, MoveSpeedStat},
 	tags::{MainCamera, PlayerOwned, Projectile},
 	utils::Lifetime,
 };
 
 pub struct PlayerPlugin;
 #[derive(Component, Default, Reflect)]
-#[require(MaxHealth(200.), MoveSpeed(100.), FireRate, Transform, Visibility)]
+#[require(MaxHealth(200.), MoveSpeedStat(100.), FireRate, Transform, Visibility)]
 pub struct Player;
 
 impl Plugin for PlayerPlugin {
@@ -28,7 +28,7 @@ struct Projectiles {
 
 fn init_meshes(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<ColorMaterial>>) {
 	commands.insert_resource(Projectiles {
-		player_mesh: meshes.add(Circle::new(5.)),
+		player_mesh: meshes.add(Circle::new(2.)),
 		player_mat: materials.add(Color::linear_rgb(1.0, 0.6, 0.16)),
 	});
 }
@@ -113,8 +113,9 @@ fn fire_projectile(
 			RigidBody::Dynamic,
 			Velocity::linear(player_transform.up().xy() * 200.),
 			Mesh2d(projectiles.player_mesh.clone()),
+			ActiveEvents::COLLISION_EVENTS,
 			MeshMaterial2d(projectiles.player_mat.clone()),
-			Collider::ball(5.),
+			Collider::ball(2.),
 		));
 	}
 }
