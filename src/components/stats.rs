@@ -19,9 +19,9 @@ impl Default for MaxHealth {
 	}
 }
 
-impl Into<Health> for MaxHealth {
-	fn into(self) -> Health {
-		Health(self.0)
+impl From<MaxHealth> for Health {
+	fn from(val: MaxHealth) -> Self {
+		Health(val.0)
 	}
 }
 

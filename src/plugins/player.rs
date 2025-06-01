@@ -30,7 +30,6 @@ fn init_meshes(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut mat
 	commands.insert_resource(Projectiles {
 		player_mesh: meshes.add(Circle::new(5.)),
 		player_mat: materials.add(Color::linear_rgb(1.0, 0.6, 0.16)),
-		..default()
 	});
 }
 
@@ -44,7 +43,7 @@ fn spawn_player(
 		RigidBody::KinematicPositionBased,
 		Name::new("Player"),
 		Mesh2d(meshes.add(Circle::new(10.))),
-		MeshMaterial2d(materials.add(Color::linear_rgb(1.0, 0.0, 0.3921568627))),
+		MeshMaterial2d(materials.add(Color::linear_rgb(1.0, 0.0, 0.39))),
 		children![(
 			Transform::from_translation(Vec3::Y * 7.),
 			Mesh2d(meshes.add(Rectangle::new(5., 10.))),

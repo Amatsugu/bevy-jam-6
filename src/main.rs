@@ -9,7 +9,7 @@ use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_rapier2d::prelude::*;
 use plugins::GamePlugin;
 
-const NAME: &'static str = "Bevy Jam 6";
+const NAME: &str = "Bevy Jam 6";
 
 fn main() {
 	App::new()

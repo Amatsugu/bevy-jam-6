@@ -29,7 +29,7 @@ impl Plugin for GamePlugin {
 }
 
 fn setup(mut commands: Commands) {
-	commands.spawn((Camera2d::default(), MainCamera));
+	commands.spawn((Camera2d, MainCamera));
 	#[cfg(debug_assertions)]
 	commands.spawn((
 		PerfUiEntryFPS::default(),

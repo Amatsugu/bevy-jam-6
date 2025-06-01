@@ -22,6 +22,8 @@ jobs:
     clippy-lints:
         name: Clippy lints
         runs-on: ubuntu-latest
+        env:
+            RUSTFLAGS: "-Dwarnings"
         timeout-minutes: 20
         steps:
             - name: Checkout repository
@@ -51,6 +53,8 @@ jobs:
     bevy-lints:
         name: Bevy lints
         runs-on: ubuntu-latest
+        env:
+            RUSTFLAGS: "-Dwarnings"
         timeout-minutes: 20
         steps:
             - name: Checkout repository

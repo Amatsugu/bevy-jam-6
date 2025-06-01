@@ -1,8 +1,6 @@
-use bevy::math::VectorSpace;
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::Collider;
 use bevy_rapier2d::prelude::RigidBody;
-use bevy_rapier2d::prelude::Velocity;
 
 use crate::components::{
 	ai::{AI, AITarget, ChaseAI},
