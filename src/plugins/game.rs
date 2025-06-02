@@ -9,8 +9,8 @@ use iyes_perf_ui::{
 use crate::components::tags::MainCamera;
 
 use super::{
-	enemies::EnemiesPlugin, hooks::HooksPlugin, player::PlayerPlugin, projectiles::ProjectilesPlugin,
-	types::TypesPlugin, utils::UtilsPlugin,
+	death::DeathPlugin, enemies::EnemiesPlugin, hooks::HooksPlugin, player::PlayerPlugin,
+	projectiles::ProjectilesPlugin, types::TypesPlugin, utils::UtilsPlugin,
 };
 
 #[derive(Default)]
@@ -26,6 +26,7 @@ impl Plugin for GamePlugin {
 			TypesPlugin,
 			UtilsPlugin,
 			ProjectilesPlugin,
+			DeathPlugin,
 		));
 		app.add_systems(Startup, (setup, disable_gravity));
 

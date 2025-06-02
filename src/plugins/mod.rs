@@ -1,3 +1,4 @@
+mod death;
 mod enemies;
 mod game;
 mod hooks;

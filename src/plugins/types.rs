@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::components::{ai::*, stats::*, utils::*};
+use crate::components::{ai::*, death::*, stats::*, utils::*};
 
 pub struct TypesPlugin;
 
@@ -19,5 +19,9 @@ impl Plugin for TypesPlugin {
 		app.register_type::<ChargeAI>();
 		app.register_type::<HoverAI>();
 		app.register_type::<AITarget>();
+		app.register_type::<DeathExplosion>();
+		app.register_type::<DeathScatter>();
+		app.register_type::<ScatterPattern>();
+		app.register_type::<Targeting>();
 	}
 }

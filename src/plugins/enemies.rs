@@ -1,10 +1,14 @@
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
-use crate::components::{
-	ai::{AI, AITarget, ChargeAI, ChaseAI, HoverAI},
-	stats::{MoveSpeed, MoveSpeedStat},
-	tags::Enemy,
+use crate::{
+	ENEMY_GROUP,
+	components::{
+		ai::{AI, AITarget, ChargeAI, ChaseAI, HoverAI},
+		death::{DeathScatter, ScatterPattern},
+		stats::{Health, MoveSpeed, MoveSpeedStat},
+		tags::Enemy,
+	},
 };
 
 use super::player::Player;
@@ -15,6 +19,7 @@ impl Plugin for EnemiesPlugin {
 	fn build(&self, app: &mut App) {
 		app.add_systems(Startup, init);
 		app.add_systems(Update, ((set_ai_chase_target, set_ai_hover_target), move_ai).chain());
+		app.add_systems(Update, process_life);
 
 		//Debugging
 		#[cfg(feature = "ai")]
@@ -36,7 +41,9 @@ fn init(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials:
 			commands.spawn((
 				Enemy,
 				ActiveEvents::COLLISION_EVENTS,
+				CollisionGroups::new(ENEMY_GROUP, Group::ALL),
 				Name::new("Enemy"),
+				Health(50.),
 				Transform::from_xyz(x as f32 * 10.0, y as f32 * 10.0, 0.0),
 				RigidBody::Dynamic,
 				Mesh2d(mesh.clone()),
@@ -48,6 +55,11 @@ fn init(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials:
 				Velocity::zero(),
 				MoveSpeedStat(20.),
 				Collider::ball(4.),
+				DeathScatter {
+					count: 30,
+					pattern: ScatterPattern::Spiral(10., 10.),
+					damage: 30.,
+				},
 			));
 		}
 	}
@@ -125,6 +137,14 @@ fn set_ai_hover_target(
 		} else {
 			let dir_normalized = dir.normalize_or(Vec2::Y);
 			tgt.move_to = player_pos + (dir_normalized * hover.hover_distance);
+		}
+	}
+}
+
+fn process_life(mut query: Query<(&mut AI, &Health)>) {
+	for (mut ai, health) in &mut query {
+		if health.0 <= 0. {
+			ai.is_alive = false;
 		}
 	}
 }

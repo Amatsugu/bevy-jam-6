@@ -6,17 +6,27 @@ use super::stats::{Health, MaxHealth};
 #[require(MaxHealth, Health, Transform, Visibility)]
 pub struct Enemy;
 
-#[derive(Component, Reflect)]
-pub struct PlayerOwned;
-
-#[derive(Component, Reflect)]
-pub struct EnemyOwned;
-
 #[derive(Component)]
 pub struct MainCamera;
 
 #[derive(Component, Reflect)]
 pub struct KillOnContact;
 
-#[derive(Component, Reflect)]
-pub struct Projectile;
+#[derive(Component, Reflect, Default)]
+pub struct Projectile(pub Owner);
+
+impl Projectile {
+	pub fn player() -> Self {
+		Projectile(Owner::Player)
+	}
+	pub fn enemy() -> Self {
+		Projectile(Owner::Enemy)
+	}
+}
+
+#[derive(Reflect, Default, Clone, Copy)]
+pub enum Owner {
+	#[default]
+	Player,
+	Enemy,
+}

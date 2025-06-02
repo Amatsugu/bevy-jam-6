@@ -1,10 +1,13 @@
 use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_rapier2d::prelude::*;
 
-use crate::components::{
-	stats::{Damage, FireRate, MaxHealth, MoveSpeed, MoveSpeedStat},
-	tags::{MainCamera, PlayerOwned, Projectile},
-	utils::Lifetime,
+use crate::{
+	PLAYER_GROUP, PLAYER_OWNED_GROUP, PLAYER_PROJECTILE_GROUP,
+	components::{
+		stats::{Damage, FireRate, MaxHealth, MoveSpeed, MoveSpeedStat},
+		tags::{MainCamera, Projectile},
+		utils::Lifetime,
+	},
 };
 
 pub struct PlayerPlugin;
@@ -22,14 +25,14 @@ impl Plugin for PlayerPlugin {
 
 #[derive(Resource, Reflect, Default)]
 struct Projectiles {
-	player_mesh: Handle<Mesh>,
-	player_mat: Handle<ColorMaterial>,
+	mesh: Handle<Mesh>,
+	mat: Handle<ColorMaterial>,
 }
 
 fn init_meshes(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<ColorMaterial>>) {
 	commands.insert_resource(Projectiles {
-		player_mesh: meshes.add(Circle::new(2.)),
-		player_mat: materials.add(Color::linear_rgb(1.0, 0.6, 0.16)),
+		mesh: meshes.add(Circle::new(2.)),
+		mat: materials.add(Color::linear_rgb(1.0, 0.6, 0.16)),
 	});
 }
 
@@ -41,6 +44,8 @@ fn spawn_player(
 	commands.spawn((
 		Player,
 		RigidBody::KinematicPositionBased,
+		FireRate::new(5.),
+		Collider::ball(10.),
 		Name::new("Player"),
 		Mesh2d(meshes.add(Circle::new(10.))),
 		MeshMaterial2d(materials.add(Color::linear_rgb(1.0, 0.0, 0.39))),
@@ -49,6 +54,7 @@ fn spawn_player(
 			Mesh2d(meshes.add(Rectangle::new(5., 10.))),
 			MeshMaterial2d(materials.add(Color::linear_rgb(1.0, 0.6, 0.16))),
 		)],
+		CollisionGroups::new(PLAYER_GROUP, Group::ALL),
 	));
 }
 
@@ -105,17 +111,17 @@ fn fire_projectile(
 	if firerate.0.finished() && mouse.pressed(MouseButton::Left) {
 		firerate.0.tick(time.delta());
 		commands.spawn((
-			Projectile,
-			Damage(10.),
-			PlayerOwned,
-			Transform::from_translation(player_transform.translation),
+			Projectile::player(),
+			Damage(30.),
+			Transform::from_translation(player_transform.translation + player_transform.up() * 20.),
 			Lifetime::new(5.),
 			RigidBody::Dynamic,
 			Velocity::linear(player_transform.up().xy() * 200.),
-			Mesh2d(projectiles.player_mesh.clone()),
+			Mesh2d(projectiles.mesh.clone()),
 			ActiveEvents::COLLISION_EVENTS,
-			MeshMaterial2d(projectiles.player_mat.clone()),
+			MeshMaterial2d(projectiles.mat.clone()),
 			Collider::ball(2.),
+			CollisionGroups::new(PLAYER_PROJECTILE_GROUP, Group::ALL ^ PLAYER_OWNED_GROUP),
 		));
 	}
 }
