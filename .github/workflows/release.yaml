@@ -33,11 +33,11 @@ env:
     build_for_macos: false
 
     # Whether to upload the packages produced by this workflow to a GitHub release.
-    upload_to_github: false
+    upload_to_github: true
 
     # The itch.io project to upload to in the format `user-name/project-name`.
     # There will be no upload to itch.io if this is commented out.
-    upload_to_itch: amatsugu/bevy-new-2d
+    # upload_to_itch: amatsugu/bevy-new-2d
 
     ############
     # ADVANCED #
