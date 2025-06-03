@@ -3,8 +3,11 @@ mod plugins;
 
 use bevy::asset::AssetMetaCheck;
 use bevy::prelude::*;
+#[cfg(debug_assertions)]
 use bevy::window::PresentMode;
+#[cfg(debug_assertions)]
 use bevy_inspector_egui::bevy_egui::EguiPlugin;
+#[cfg(debug_assertions)]
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_rapier2d::prelude::*;
 use plugins::GamePlugin;

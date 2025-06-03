@@ -1,8 +1,7 @@
+use crate::components::spawner::SpawnBatch;
 use bevy::{ecs::entity_disabling::Disabled, prelude::*};
 use bevy_rapier2d::prelude::*;
 
-#[cfg(debug_assertions)]
-use crate::components::spawner::SpawnBatch;
 use crate::{
 	ENEMY_GROUP,
 	components::{
@@ -22,7 +21,9 @@ pub struct EnemySpawnerPlugin;
 impl Plugin for EnemySpawnerPlugin {
 	fn build(&self, app: &mut App) {
 		app.add_systems(Startup, (prepare_prefabs, create_spawners).chain());
-		app.add_systems(Update, (spawner_viz, spawners_batching, spawners_spawning));
+		app.add_systems(Update, (spawners_batching, spawners_spawning));
+		#[cfg(debug_assertions)]
+		app.add_systems(Update, spawner_viz);
 	}
 }
 

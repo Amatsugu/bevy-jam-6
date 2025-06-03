@@ -6,11 +6,13 @@ use iyes_perf_ui::{
 	prelude::{PerfUiEntryFPS, PerfUiEntryFrameTimeWorst, PerfUiEntryRenderGpuTime},
 };
 
+#[cfg(debug_assertions)]
+use crate::plugins::types::TypesPlugin;
 use crate::{components::tags::MainCamera, plugins::spawner::EnemySpawnerPlugin};
 
 use super::{
 	death::DeathPlugin, enemies::EnemiesPlugin, hooks::HooksPlugin, player::PlayerPlugin,
-	projectiles::ProjectilesPlugin, types::TypesPlugin, utils::UtilsPlugin,
+	projectiles::ProjectilesPlugin, utils::UtilsPlugin,
 };
 
 #[derive(Default)]
