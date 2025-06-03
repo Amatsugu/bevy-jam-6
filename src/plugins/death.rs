@@ -43,7 +43,7 @@ fn death_scatter(
 	mesh_data: Res<Projectiles>,
 ) {
 	for (transform, scatter, ai, entity) in query {
-		if ai.is_alive {
+		if ai.enabled {
 			continue;
 		}
 
@@ -53,22 +53,20 @@ fn death_scatter(
 				let aim = match targeting {
 					Targeting::Forward => transform.up().as_vec3(),
 					Targeting::Random => Quat::from_axis_angle(Vec3::Z, 0.1) * transform.up().as_vec3(),
-					Targeting::Player => player.translation,
+					Targeting::Player => (player.translation - transform.translation).normalize_or(Vec3::Y),
 					Targeting::Closest => Vec3::ZERO,
 				};
 				let interval = arc / scatter.count as f32;
-				for i in 0..scatter.count {
+				let mesh = mesh_data.mesh.clone();
+				let mat = mesh_data.mat.clone();
+				let dmg = scatter.damage;
+				let base_pos = transform.translation.xy();
+				let bulk = (0..scatter.count).map(move |i| {
 					let angle = (i as f32 * interval) - arc / 2.;
 					let dir = (Quat::from_axis_angle(Vec3::Z, angle.to_radians()) * aim).xy();
-					fire_projectile(
-						&mut commands,
-						transform.translation.xy() + dir * 20.,
-						dir * 200.,
-						scatter.damage,
-						mesh_data.mesh.clone(),
-						mesh_data.mat.clone(),
-					);
-				}
+					return get_projectile(base_pos + dir * 20., dir * 200., dmg, mesh.clone(), mat.clone());
+				});
+				commands.spawn_batch(bulk);
 				commands.entity(entity).despawn();
 			}
 			ScatterPattern::Spiral(arc, rate) => {
@@ -78,8 +76,8 @@ fn death_scatter(
 						Name::new("Spiral"),
 						Transform::IDENTITY,
 						SpiralSpawner {
+							arc,
 							timer: Timer::from_seconds(1.0 / rate, TimerMode::Repeating),
-							arc: arc,
 							count: scatter.count,
 							damage: scatter.damage,
 							mesh: mesh_data.mesh.clone(),
@@ -111,38 +109,54 @@ fn sprial_spawner(
 				}
 				spiral.spawn_count += 1;
 				let angle = spiral.arc * spiral.spawn_count as f32;
-				let dir = (Quat::from_axis_angle(Vec3::Z, angle.to_radians()) * transform.up()).xy();
-				fire_projectile(
-					&mut commands,
+				let dir = Vec2::from_angle(angle.to_radians());
+				commands.spawn(get_projectile(
 					transform.translation().xy() + dir * 20.,
 					dir * 200.,
 					spiral.damage,
 					spiral.mesh.clone(),
 					spiral.material.clone(),
-				);
+				));
 			}
 		}
 	}
 }
 
-fn fire_projectile(
-	commands: &mut Commands,
+#[derive(Bundle)]
+struct ProjBundle {
+	proj: Projectile,
+	damage: Damage,
+	transform: Transform,
+	rigidbody: RigidBody,
+	vel: Velocity,
+	mesh: Mesh2d,
+	life: Lifetime,
+	material: MeshMaterial2d<ColorMaterial>,
+	collider: Collider,
+	sensor: Sensor,
+	groups: CollisionGroups,
+	active: ActiveEvents,
+}
+
+fn get_projectile(
 	origin: Vec2,
 	vel: Vec2,
 	damage: f32,
 	mesh: Handle<Mesh>,
 	material: Handle<ColorMaterial>,
-) {
-	commands.spawn((
-		Projectile::enemy(),
-		Damage(damage),
-		Transform::from_translation(origin.extend(0.)),
-		Lifetime::new(5.),
-		RigidBody::Dynamic,
-		Velocity::linear(vel),
-		Mesh2d(mesh.clone()),
-		MeshMaterial2d(material.clone()),
-		Collider::ball(0.5),
-		CollisionGroups::new(ENEMY_PROJECTILE_GROUP, Group::ALL ^ ENEMY_PROJECTILE_GROUP),
-	));
+) -> ProjBundle {
+	return ProjBundle {
+		proj: Projectile::enemy(),
+		active: ActiveEvents::COLLISION_EVENTS,
+		damage: Damage(damage),
+		transform: Transform::from_translation(origin.extend(0.)),
+		life: Lifetime::new(5.),
+		rigidbody: RigidBody::Dynamic,
+		vel: Velocity::linear(vel),
+		mesh: Mesh2d(mesh.clone()),
+		material: MeshMaterial2d(material.clone()),
+		collider: Collider::ball(0.5),
+		groups: CollisionGroups::new(ENEMY_PROJECTILE_GROUP, Group::ALL ^ ENEMY_PROJECTILE_GROUP),
+		sensor: Sensor,
+	};
 }

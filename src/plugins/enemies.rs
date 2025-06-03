@@ -1,14 +1,9 @@
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
-use crate::{
-	ENEMY_GROUP,
-	components::{
-		ai::{AI, AITarget, ChargeAI, ChaseAI, HoverAI},
-		death::{DeathScatter, ScatterPattern},
-		stats::{Health, MoveSpeed, MoveSpeedStat},
-		tags::Enemy,
-	},
+use crate::components::{
+	ai::{AI, AITarget, ChargeAI, ChaseAI, HoverAI},
+	stats::{Life, MoveSpeed},
 };
 
 use super::player::Player;
@@ -17,7 +12,6 @@ pub struct EnemiesPlugin;
 
 impl Plugin for EnemiesPlugin {
 	fn build(&self, app: &mut App) {
-		app.add_systems(Startup, init);
 		app.add_systems(Update, ((set_ai_chase_target, set_ai_hover_target), move_ai).chain());
 		app.add_systems(Update, process_life);
 
@@ -28,46 +22,9 @@ impl Plugin for EnemiesPlugin {
 	}
 }
 
-fn init(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<ColorMaterial>>) {
-	let mesh = meshes.add(Triangle2d::new(
-		Vec2::Y * 5.0,
-		Vec2::new(-5.0, -5.0),
-		Vec2::new(5.0, -5.0),
-	));
-	const GRID_SIZE: usize = 10;
-	for x in 0..GRID_SIZE {
-		for y in 0..GRID_SIZE {
-			let color = Color::hsl(360.0 * (x as f32 / GRID_SIZE as f32), 1., 0.7);
-			commands.spawn((
-				Enemy,
-				ActiveEvents::COLLISION_EVENTS,
-				CollisionGroups::new(ENEMY_GROUP, Group::ALL),
-				Name::new("Enemy"),
-				Health(50.),
-				Transform::from_xyz(x as f32 * 10.0, y as f32 * 10.0, 0.0),
-				RigidBody::Dynamic,
-				Mesh2d(mesh.clone()),
-				MeshMaterial2d(materials.add(color)),
-				HoverAI {
-					hover_distance: 100.,
-					range: 20.,
-				},
-				Velocity::zero(),
-				MoveSpeedStat(20.),
-				Collider::ball(4.),
-				DeathScatter {
-					count: 30,
-					pattern: ScatterPattern::Spiral(10., 10.),
-					damage: 30.,
-				},
-			));
-		}
-	}
-}
-
-fn move_ai(mut query: Query<(&mut Transform, &mut Velocity, &MoveSpeed, &AI, &AITarget)>) {
-	for (mut transform, mut vel, speed, ai, tgt) in &mut query {
-		if ai.is_dead() {
+fn move_ai(query: Query<(&mut Transform, &mut Velocity, &MoveSpeed, &AI, &AITarget, &Life)>) {
+	for (mut transform, mut vel, speed, ai, tgt, life) in query {
+		if ai.is_disabled() || life.is_dead() {
 			continue;
 		}
 		let move_dir = (tgt.move_to - transform.translation.xy()).normalize_or_zero();
@@ -109,11 +66,11 @@ fn debug_hover_ai(query: Query<&HoverAI>, mut gizmos: Gizmos, player: Single<&Tr
 }
 
 fn set_ai_chase_target(
-	mut query: Query<(&mut AITarget, &AI), Or<(With<ChaseAI>, With<ChargeAI>)>>,
+	query: Query<(&mut AITarget, &AI, &Life), Or<(With<ChaseAI>, With<ChargeAI>)>>,
 	player: Single<&Transform, With<Player>>,
 ) {
-	for (mut tgt, ai) in &mut query {
-		if ai.is_dead() {
+	for (mut tgt, ai, life) in query {
+		if ai.is_disabled() || life.is_dead() {
 			continue;
 		}
 		tgt.look_and_move(player.translation.xy());
@@ -121,11 +78,11 @@ fn set_ai_chase_target(
 }
 
 fn set_ai_hover_target(
-	mut query: Query<(&mut AITarget, &AI, &Transform, &HoverAI)>,
+	query: Query<(&mut AITarget, &AI, &Transform, &HoverAI)>,
 	player: Single<&Transform, With<Player>>,
 ) {
-	for (mut tgt, ai, transform, hover) in &mut query {
-		if ai.is_dead() {
+	for (mut tgt, ai, transform, hover) in query {
+		if ai.is_disabled() {
 			continue;
 		}
 		let player_pos = player.translation.xy();
@@ -141,10 +98,10 @@ fn set_ai_hover_target(
 	}
 }
 
-fn process_life(mut query: Query<(&mut AI, &Health)>) {
-	for (mut ai, health) in &mut query {
-		if health.0 <= 0. {
-			ai.is_alive = false;
+fn process_life(query: Query<(&mut AI, &Life)>) {
+	for (mut ai, life) in query {
+		if life.is_dead() {
+			ai.enabled = false;
 		}
 	}
 }

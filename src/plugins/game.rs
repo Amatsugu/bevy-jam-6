@@ -6,7 +6,7 @@ use iyes_perf_ui::{
 	prelude::{PerfUiEntryFPS, PerfUiEntryFrameTimeWorst, PerfUiEntryRenderGpuTime},
 };
 
-use crate::components::tags::MainCamera;
+use crate::{components::tags::MainCamera, plugins::spawner::EnemySpawnerPlugin};
 
 use super::{
 	death::DeathPlugin, enemies::EnemiesPlugin, hooks::HooksPlugin, player::PlayerPlugin,
@@ -20,10 +20,12 @@ pub struct GamePlugin;
 impl Plugin for GamePlugin {
 	fn build(&self, app: &mut App) {
 		app.add_plugins((
+			#[cfg(debug_assertions)]
+			TypesPlugin,
 			PlayerPlugin,
 			EnemiesPlugin,
+			EnemySpawnerPlugin,
 			HooksPlugin,
-			TypesPlugin,
 			UtilsPlugin,
 			ProjectilesPlugin,
 			DeathPlugin,

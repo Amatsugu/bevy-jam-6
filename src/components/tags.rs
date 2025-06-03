@@ -12,6 +12,9 @@ pub struct MainCamera;
 #[derive(Component, Reflect)]
 pub struct KillOnContact;
 
+#[derive(Component, Reflect)]
+pub struct Piercing(pub u32);
+
 #[derive(Component, Reflect, Default)]
 pub struct Projectile(pub Owner);
 

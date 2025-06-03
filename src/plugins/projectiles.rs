@@ -1,75 +1,55 @@
-use std::collections::HashMap;
-
-use bevy::{ecs::world::CommandQueue, prelude::*};
+use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
 use crate::components::{
-	stats::{Damage, Health},
-	tags::{Enemy, Owner, Projectile},
+	stats::{Damage, Health, Life},
+	tags::{Piercing, Projectile},
 };
 
 pub struct ProjectilesPlugin;
 
 impl Plugin for ProjectilesPlugin {
 	fn build(&self, app: &mut App) {
-		app.init_resource::<ActiveCollisions>();
-		app.add_systems(Update, (handle_collision_events, handle_projectiles).chain());
-	}
-}
-#[derive(Resource, Default, Reflect)]
-#[reflect(Resource)]
-struct ActiveCollisions(HashMap<Entity, Entity>);
-
-fn handle_collision_events(
-	mut collision_events: EventReader<CollisionEvent>,
-	mut collisions: ResMut<ActiveCollisions>,
-) {
-	for event in collision_events.read() {
-		match event {
-			CollisionEvent::Started(entity_a, entity_b, _) => {
-				collisions.0.insert(*entity_a, *entity_b);
-				collisions.0.insert(*entity_b, *entity_a);
-			}
-			CollisionEvent::Stopped(a, b, _) => {
-				collisions.0.remove_entry(a);
-				collisions.0.remove_entry(b);
-			}
-		};
+		app.add_systems(Update, handle_projectiles);
 	}
 }
 
 fn handle_projectiles(
-	query: Query<(&Projectile, &Damage, Entity)>,
-	collisions: Res<ActiveCollisions>,
+	mut projectiles: Query<(Entity, &Damage, Option<&mut Piercing>), With<Projectile>>,
+	mut targets: Query<(&mut Health, &mut Life)>,
+	mut collision_events: EventReader<CollisionEvent>,
 	mut commands: Commands,
 ) {
-	let mut queue = CommandQueue::default();
-	for (proj, damage, entity) in query {
-		let proj_type = proj.0;
-		if let Some(hit) = collisions.0.get(&entity) {
-			let t = hit.clone();
-			let dmg = damage.0;
-
-			queue.push(move |world: &mut World| {
-				match proj_type {
-					Owner::Player => {
-						if world.get::<Enemy>(t).is_some() {
-							if let Some(mut health) = world.get_mut::<Health>(t) {
-								health.0 -= dmg;
-							}
-						}
-					}
-					Owner::Enemy => {
-						if let Some(mut health) = world.get_mut::<Health>(t) {
-							health.0 -= dmg;
-						}
-					}
+	for event in collision_events.read() {
+		if let CollisionEvent::Started(entity_a, entity_b, _) = event {
+			if let Ok((e, damage, mut piercing)) = projectiles.get_mut(*entity_a) {
+				if let Ok((mut health, mut life)) = targets.get_mut(*entity_b) {
+					apply_damage(&mut health, &mut life, damage);
 				}
-				let mut c = world.commands();
-				let mut ec = c.entity(entity);
-				ec.despawn();
-			});
+				process_piercing(&mut piercing, e, &mut commands);
+			} else if let Ok((e, damage, mut piercing)) = projectiles.get_mut(*entity_b) {
+				if let Ok((mut health, mut life)) = targets.get_mut(*entity_a) {
+					apply_damage(&mut health, &mut life, damage);
+				}
+				process_piercing(&mut piercing, e, &mut commands);
+			}
 		}
-		commands.append(&mut queue);
+	}
+}
+pub fn process_piercing(piercing: &mut Option<Mut<'_, Piercing>>, entity: Entity, commands: &mut Commands) {
+	if let Some(p) = piercing {
+		p.0 -= 1;
+		if p.0 == 0 {
+			commands.entity(entity).try_despawn();
+		}
+	} else {
+		commands.entity(entity).try_despawn();
+	}
+}
+
+pub fn apply_damage(health: &mut Health, life: &mut Life, damage: &Damage) {
+	health.0 -= damage.0;
+	if health.0 <= 0. {
+		life.0 = false;
 	}
 }

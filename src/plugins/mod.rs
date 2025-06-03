@@ -4,6 +4,7 @@ mod game;
 mod hooks;
 mod player;
 mod projectiles;
+mod spawner;
 mod types;
 mod utils;
 pub use game::*;

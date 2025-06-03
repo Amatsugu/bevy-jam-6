@@ -5,17 +5,17 @@ use super::stats::{Health, MoveSpeedMultiplier, MoveSpeedStat};
 #[derive(Component, Reflect)]
 #[require(Transform, MoveSpeedStat, MoveSpeedMultiplier, Health, AITarget)]
 pub struct AI {
-	pub is_alive: bool,
+	pub enabled: bool,
 }
 
 impl Default for AI {
 	fn default() -> Self {
-		AI { is_alive: true }
+		AI { enabled: true }
 	}
 }
 impl AI {
-	pub fn is_dead(&self) -> bool {
-		!self.is_alive
+	pub fn is_disabled(&self) -> bool {
+		!self.enabled
 	}
 }
 

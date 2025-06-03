@@ -24,6 +24,26 @@ pub struct Health(pub f32);
 
 #[derive(Component, Reflect)]
 #[require(Health)]
+pub struct Life(pub bool);
+
+impl Default for Life {
+	fn default() -> Self {
+		Life(true)
+	}
+}
+
+impl Life {
+	#[allow(dead_code)]
+	pub fn is_alive(&self) -> bool {
+		self.0
+	}
+	pub fn is_dead(&self) -> bool {
+		!self.0
+	}
+}
+
+#[derive(Component, Reflect)]
+#[require(Health, Life)]
 pub struct MaxHealth(pub f32);
 
 impl Default for MaxHealth {

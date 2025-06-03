@@ -6,7 +6,7 @@ pub struct HooksPlugin;
 
 impl Plugin for HooksPlugin {
 	fn build(&self, app: &mut App) {
-		app.add_systems(Startup, setup);
+		app.add_systems(PreStartup, setup);
 	}
 }
 

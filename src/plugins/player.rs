@@ -121,6 +121,7 @@ fn fire_projectile(
 			ActiveEvents::COLLISION_EVENTS,
 			MeshMaterial2d(projectiles.mat.clone()),
 			Collider::ball(2.),
+			Sensor,
 			CollisionGroups::new(PLAYER_PROJECTILE_GROUP, Group::ALL ^ PLAYER_OWNED_GROUP),
 		));
 	}
