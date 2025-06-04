@@ -12,7 +12,7 @@ concurrency:
 
 env:
     # Reduce compile time and cache size.
-    RUSTFLAGS: -Zshare-generics=y -Zthreads=0
+    RUSTFLAGS: -Zshare-generics=y -Zthreads=0 --cfg getrandom_backend="wasm_js"
     RUSTDOCFLAGS: -Zshare-generics=y -Zthreads=0
     # Use the same Rust toolchain across jobs so they can share a cache.
     toolchain: nightly-2025-04-03
@@ -135,4 +135,4 @@ jobs:
               run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev libwayland-dev
 
             - name: Check web
-              run: cargo check --config 'profile.web.inherits="dev"' --profile ci --no-default-features --features dev --target wasm32-unknown-unknown
+              run: cargo check --config 'profile.web.inherits="dev"' --profile ci --no-default-features --features "dev web" --target wasm32-unknown-unknown
