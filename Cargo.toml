@@ -5,10 +5,12 @@ edition = "2024"
 license = "MIT"
 
 [dependencies]
-bevy_rapier2d = { version = "0.30.0", features = ["simd-stable"] }
+bevy_rapier2d = { version = "0.30.0", features = ["simd-stable", "parallel"] }
 bevy = "0.16"
 bevy-inspector-egui = "0.31.0"
 iyes_perf_ui = "0.5.0"
+rand = "0.9.1"
+rand_chacha = "0.9.0"
 
 [features]
 default = ["dev_native"]
@@ -19,6 +21,7 @@ dev = [
 	"bevy/bevy_ui_debug",
 	# Improve error messages coming from Bevy
 	"bevy/track_location",
+	"inspect",
 ]
 dev_native = [
 	"dev",
@@ -29,7 +32,7 @@ dev_native = [
 ]
 phys = ["dev"]
 ai = ["dev"]
-
+inspect = []
 
 [lints.clippy]
 # Bevy supplies arguments to systems via dependency injection, so it's natural for systems to

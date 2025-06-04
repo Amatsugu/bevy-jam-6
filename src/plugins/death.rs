@@ -1,15 +1,18 @@
+use std::f32::consts::PI;
+
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
 use crate::{
 	ENEMY_PROJECTILE_GROUP,
 	components::{
-		ai::AI,
 		death::{DeathScatter, ScatterPattern, SpiralSpawner, Targeting},
-		stats::Damage,
+		effects::Explosion,
+		stats::{Damage, Life},
 		tags::Projectile,
 		utils::Lifetime,
 	},
+	resources::utils::RNG,
 };
 
 use super::player::Player;
@@ -37,24 +40,40 @@ fn init_meshes(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut mat
 }
 
 fn death_scatter(
-	query: Query<(&Transform, &DeathScatter, &AI, Entity)>,
+	query: Query<(&Transform, &DeathScatter, &Life, Entity)>,
 	player: Single<&Transform, With<Player>>,
 	mut commands: Commands,
 	mesh_data: Res<Projectiles>,
+	mut rng: ResMut<RNG>,
 ) {
-	for (transform, scatter, ai, entity) in query {
-		if ai.enabled {
+	for (transform, scatter, life, entity) in query {
+		if life.is_alive() {
 			continue;
 		}
 
 		match scatter.pattern {
-			ScatterPattern::Radial => todo!(),
-			ScatterPattern::Spread(arc, targeting) => {
+			ScatterPattern::Explosion { range, speed } => {
+				commands.spawn((
+					Explosion {
+						range,
+						epansion_rate: speed,
+					},
+					Damage(scatter.damage),
+					Transform::from_translation(transform.translation).with_scale(Vec3::splat(0.01)),
+					ActiveEvents::COLLISION_EVENTS,
+					CollisionGroups::new(ENEMY_PROJECTILE_GROUP, Group::ALL),
+					Collider::ball(1.),
+				));
+				commands.entity(entity).despawn();
+			}
+			ScatterPattern::Spread { arc, targeting } => {
 				let aim = match targeting {
 					Targeting::Forward => transform.up().as_vec3(),
-					Targeting::Random => Quat::from_axis_angle(Vec3::Z, 0.1) * transform.up().as_vec3(),
+					Targeting::Random => {
+						let angle = rng.range(-PI..PI);
+						Vec3::new(angle.cos(), angle.sin(), 0.0)
+					}
 					Targeting::Player => (player.translation - transform.translation).normalize_or(Vec3::Y),
-					Targeting::Closest => Vec3::ZERO,
 				};
 				let interval = arc / scatter.count as f32;
 				let mesh = mesh_data.mesh.clone();
@@ -69,14 +88,14 @@ fn death_scatter(
 				commands.spawn_batch(bulk);
 				commands.entity(entity).despawn();
 			}
-			ScatterPattern::Spiral(arc, rate) => {
+			ScatterPattern::Spiral { angle, rate } => {
 				commands
 					.entity(entity)
 					.with_child((
 						Name::new("Spiral"),
 						Transform::IDENTITY,
 						SpiralSpawner {
-							arc,
+							angle,
 							timer: Timer::from_seconds(1.0 / rate, TimerMode::Repeating),
 							count: scatter.count,
 							damage: scatter.damage,
@@ -108,7 +127,7 @@ fn sprial_spawner(
 					break;
 				}
 				spiral.spawn_count += 1;
-				let angle = spiral.arc * spiral.spawn_count as f32;
+				let angle = spiral.angle * spiral.spawn_count as f32;
 				let dir = Vec2::from_angle(angle.to_radians());
 				commands.spawn(get_projectile(
 					transform.translation().xy() + dir * 20.,

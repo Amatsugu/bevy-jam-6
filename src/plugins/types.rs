@@ -1,13 +1,17 @@
-#[cfg(debug_assertions)]
 use bevy::prelude::*;
 
-#[cfg(debug_assertions)]
-use crate::components::{ai::*, death::*, spawner::*, stats::*, tags::*, utils::*};
+use crate::components::{
+	ai::*,
+	death::*,
+	effects::{Explosion, ExplosionProgress},
+	spawner::*,
+	stats::*,
+	tags::*,
+	utils::*,
+};
 
-#[cfg(debug_assertions)]
 pub struct TypesPlugin;
 
-#[cfg(debug_assertions)]
 impl Plugin for TypesPlugin {
 	fn build(&self, app: &mut App) {
 		app.register_type::<Health>();
@@ -23,6 +27,7 @@ impl Plugin for TypesPlugin {
 		app.register_type::<AI>();
 		app.register_type::<ChaseAI>();
 		app.register_type::<ChargeAI>();
+		app.register_type::<ChargeInfo>();
 		app.register_type::<HoverAI>();
 		app.register_type::<AITarget>();
 		app.register_type::<DeathExplosion>();
@@ -31,5 +36,7 @@ impl Plugin for TypesPlugin {
 		app.register_type::<Targeting>();
 		app.register_type::<Spawner>();
 		app.register_type::<SpawnBatch>();
+		app.register_type::<Explosion>();
+		app.register_type::<ExplosionProgress>();
 	}
 }

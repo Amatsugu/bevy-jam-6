@@ -5,10 +5,14 @@ use iyes_perf_ui::{
 	PerfUiPlugin,
 	prelude::{PerfUiEntryFPS, PerfUiEntryFrameTimeWorst, PerfUiEntryRenderGpuTime},
 };
+use rand::SeedableRng;
+use rand_chacha::ChaChaRng;
 
-#[cfg(debug_assertions)]
-use crate::plugins::types::TypesPlugin;
-use crate::{components::tags::MainCamera, plugins::spawner::EnemySpawnerPlugin};
+use crate::{
+	components::tags::MainCamera,
+	plugins::{effects::EffectsPlugin, spawner::EnemySpawnerPlugin, types::TypesPlugin},
+	resources::utils::RNG,
+};
 
 use super::{
 	death::DeathPlugin, enemies::EnemiesPlugin, hooks::HooksPlugin, player::PlayerPlugin,
@@ -22,17 +26,19 @@ pub struct GamePlugin;
 impl Plugin for GamePlugin {
 	fn build(&self, app: &mut App) {
 		app.add_plugins((
-			#[cfg(debug_assertions)]
-			TypesPlugin,
 			PlayerPlugin,
 			EnemiesPlugin,
 			EnemySpawnerPlugin,
 			HooksPlugin,
 			UtilsPlugin,
+			TypesPlugin,
 			ProjectilesPlugin,
 			DeathPlugin,
+			EffectsPlugin,
 		));
 		app.add_systems(Startup, (setup, disable_gravity));
+
+		app.insert_resource(RNG(ChaChaRng::seed_from_u64(0)));
 
 		#[cfg(debug_assertions)]
 		{

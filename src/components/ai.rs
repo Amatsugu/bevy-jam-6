@@ -33,10 +33,38 @@ impl AITarget {
 }
 
 #[derive(Component, Reflect)]
-#[require(AI)]
+#[require(AI, ChargeInfo, MoveSpeedMultiplier)]
 pub struct ChargeAI {
-	pub charge_distance: f32,
-	pub charge_speed: f32,
+	pub distance: f32,
+	pub speed_multi: f32,
+	pub hit_damage: f32,
+}
+
+#[derive(Component, Reflect)]
+pub struct ChargeInfo {
+	pub charge: Timer,
+	pub cooldown: Timer,
+	pub state: ChargeState,
+	pub charge_dir: Vec2,
+}
+
+impl Default for ChargeInfo {
+	fn default() -> Self {
+		ChargeInfo {
+			charge: Timer::from_seconds(1., TimerMode::Once),
+			cooldown: Timer::from_seconds(1., TimerMode::Once),
+			state: ChargeState::Chase,
+			charge_dir: Vec2::ZERO,
+		}
+	}
+}
+
+#[derive(Default, Reflect)]
+pub enum ChargeState {
+	#[default]
+	Chase,
+	Aim,
+	Charge,
 }
 
 #[derive(Component, Reflect)]

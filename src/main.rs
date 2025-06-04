@@ -1,13 +1,14 @@
 mod components;
 mod plugins;
+mod resources;
 
 use bevy::asset::AssetMetaCheck;
 use bevy::prelude::*;
 #[cfg(debug_assertions)]
 use bevy::window::PresentMode;
-#[cfg(debug_assertions)]
+#[cfg(feature = "inspect")]
 use bevy_inspector_egui::bevy_egui::EguiPlugin;
-#[cfg(debug_assertions)]
+#[cfg(feature = "inspect")]
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_rapier2d::prelude::*;
 use plugins::GamePlugin;
@@ -42,16 +43,16 @@ fn main() {
 					}),
 					..default()
 				}),
-			#[cfg(debug_assertions)]
+			RapierPhysicsPlugin::<NoUserData>::default(),
+			GamePlugin,
+			#[cfg(feature = "inspect")]
 			EguiPlugin {
 				enable_multipass_for_primary_context: true,
 			},
-			#[cfg(debug_assertions)]
+			#[cfg(feature = "inspect")]
 			WorldInspectorPlugin::new(),
-			RapierPhysicsPlugin::<NoUserData>::default(),
 			#[cfg(feature = "phys")]
 			RapierDebugRenderPlugin::default(),
-			GamePlugin,
 		))
 		.run();
 }

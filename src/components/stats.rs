@@ -19,11 +19,18 @@ impl Default for MoveSpeedMultiplier {
 		MoveSpeedMultiplier(1.)
 	}
 }
-#[derive(Component, Default, Reflect)]
-pub struct Health(pub f32);
 
 #[derive(Component, Reflect)]
-#[require(Health)]
+#[require(Life)]
+pub struct Health(pub f32);
+
+impl Default for Health {
+	fn default() -> Self {
+		Health(100.)
+	}
+}
+
+#[derive(Component, Reflect)]
 pub struct Life(pub bool);
 
 impl Default for Life {
@@ -33,7 +40,6 @@ impl Default for Life {
 }
 
 impl Life {
-	#[allow(dead_code)]
 	pub fn is_alive(&self) -> bool {
 		self.0
 	}
@@ -43,7 +49,7 @@ impl Life {
 }
 
 #[derive(Component, Reflect)]
-#[require(Health, Life)]
+#[require(Health)]
 pub struct MaxHealth(pub f32);
 
 impl Default for MaxHealth {

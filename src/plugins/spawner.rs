@@ -1,4 +1,7 @@
-use crate::components::spawner::SpawnBatch;
+use crate::{
+	components::{spawner::SpawnBatch, stats::MaxHealth},
+	resources::utils::RNG,
+};
 use bevy::{ecs::entity_disabling::Disabled, prelude::*};
 use bevy_rapier2d::prelude::*;
 
@@ -8,12 +11,12 @@ use crate::{
 		ai::{ChargeAI, ChaseAI, HoverAI},
 		death::{DeathScatter, ScatterPattern, Targeting},
 		spawner::Spawner,
-		stats::{Health, MoveSpeedStat},
+		stats::MoveSpeedStat,
 		tags::Enemy,
 	},
 };
 
-const SPAWNER_COUNT: usize = 5;
+const SPAWNER_COUNT: usize = 3;
 const SPAWNER_ANGLE: f32 = 360. / SPAWNER_COUNT as f32;
 
 pub struct EnemySpawnerPlugin;
@@ -43,19 +46,29 @@ fn prepare_prefabs(
 	let charger = commands
 		.spawn((
 			Enemy,
+			Name::new("Charger"),
 			ChargeAI {
-				charge_distance: 50.,
-				charge_speed: 100.,
+				distance: 200.,
+				speed_multi: 10.,
+				hit_damage: 70.,
 			},
 			ActiveEvents::COLLISION_EVENTS,
 			CollisionGroups::new(ENEMY_GROUP, Group::ALL),
-			Health(100.),
+			MaxHealth(100.),
 			Mesh2d(meshes.add(Capsule2d::new(5.0, 10.0))),
 			MeshMaterial2d(materials.add(Color::linear_rgb(1.0, 1.0, 0.0))),
 			RigidBody::Dynamic,
 			Velocity::zero(),
 			MoveSpeedStat(30.),
 			Collider::ball(4.),
+			DeathScatter {
+				count: 50,
+				pattern: ScatterPattern::Spread {
+					arc: 30.,
+					targeting: Targeting::Forward,
+				},
+				damage: 30.,
+			},
 			Disabled,
 		))
 		.id();
@@ -68,7 +81,7 @@ fn prepare_prefabs(
 				range: 40.,
 			},
 			CollisionGroups::new(ENEMY_GROUP, Group::ALL),
-			Health(100.),
+			MaxHealth(100.),
 			Mesh2d(meshes.add(RegularPolygon::new(5., 6))),
 			MeshMaterial2d(materials.add(Color::linear_rgb(0.0, 1.0, 0.0))),
 			RigidBody::Dynamic,
@@ -78,7 +91,7 @@ fn prepare_prefabs(
 			Disabled,
 			DeathScatter {
 				count: 40,
-				pattern: ScatterPattern::Spiral(30., 25.),
+				pattern: ScatterPattern::Spiral { angle: 360., rate: 25. },
 				damage: 10.,
 			},
 		))
@@ -89,17 +102,21 @@ fn prepare_prefabs(
 			Enemy,
 			ChaseAI,
 			CollisionGroups::new(ENEMY_GROUP, Group::ALL),
-			Health(50.),
+			MaxHealth(50.),
 			Mesh2d(meshes.add(Circle::new(5.))),
 			MeshMaterial2d(materials.add(Color::linear_rgb(0.0, 0.0, 1.0))),
+			RigidBody::Dynamic,
 			Velocity::zero(),
 			MoveSpeedStat(40.),
 			Collider::ball(4.),
 			Disabled,
 			DeathScatter {
 				count: 50,
-				pattern: ScatterPattern::Spread(360., Targeting::Forward),
-				damage: 30.,
+				pattern: ScatterPattern::Explosion {
+					range: 100.,
+					speed: 40.,
+				},
+				damage: 10.,
 			},
 		))
 		.id();
@@ -115,8 +132,8 @@ fn create_spawners(mut commands: Commands, prefabs: Res<Prefabs>) {
 			Transform::from_translation(dir),
 			Spawner {
 				max_batch_size: 5,
-				min_batch_size: 2,
-				prefabs: vec![prefabs.hover],
+				min_batch_size: 1,
+				prefabs: vec![prefabs.chaser],
 				spawn_effect: Entity::PLACEHOLDER,
 				spawn_range: 100.,
 				spawn_rate: Timer::from_seconds(10., TimerMode::Repeating),
@@ -152,12 +169,11 @@ fn spawner_viz(mut gizmos: Gizmos, query: Query<(&Transform, &Spawner, &SpawnBat
 	}
 }
 
-fn spawners_batching(query: Query<(&mut Spawner, &mut SpawnBatch)>, time: Res<Time>) {
+fn spawners_batching(query: Query<(&mut Spawner, &mut SpawnBatch)>, time: Res<Time>, mut rng: ResMut<RNG>) {
 	for (mut spawner, mut batch) in query {
 		spawner.spawn_rate.tick(time.delta());
 		if spawner.spawn_rate.finished() {
-			batch.0 = spawner.max_batch_size;
-			info!("Adding Batch");
+			batch.0 = rng.range(spawner.min_batch_size..spawner.max_batch_size);
 		}
 	}
 }
@@ -166,6 +182,7 @@ fn spawners_spawning(
 	query: Query<(&Transform, &mut Spawner, &mut SpawnBatch)>,
 	time: Res<Time>,
 	mut commands: Commands,
+	mut rng: ResMut<RNG>,
 ) {
 	for (transform, mut spawner, mut batch) in query {
 		if batch.0 == 0 {
@@ -174,12 +191,14 @@ fn spawners_spawning(
 
 		spawner.spawn_speed.tick(time.delta());
 		if spawner.spawn_speed.finished() {
+			let pos = transform.translation + rng.point_on_circle_vec3(spawner.spawn_range);
+			let idx = rng.range(0..spawner.prefabs.len());
 			commands
-				.entity(spawner.prefabs[0])
+				.entity(spawner.prefabs[idx])
 				.clone_and_spawn_with(|builder| {
 					builder.deny::<Disabled>();
 				})
-				.insert(Transform::from_translation(transform.translation));
+				.insert(Transform::from_translation(pos));
 			batch.0 -= 1;
 		}
 	}
