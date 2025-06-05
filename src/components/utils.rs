@@ -8,3 +8,15 @@ impl Lifetime {
 		Lifetime(Timer::from_seconds(duration, TimerMode::Once))
 	}
 }
+
+impl Default for Lifetime {
+	fn default() -> Self {
+		Self(Timer::from_seconds(5., TimerMode::Once))
+	}
+}
+
+impl From<f32> for Lifetime {
+	fn from(value: f32) -> Self {
+		Self(Timer::from_seconds(value, TimerMode::Once))
+	}
+}

@@ -1,6 +1,10 @@
 use crate::{
-	components::{spawner::SpawnBatch, stats::MaxHealth},
-	resources::utils::RNG,
+	components::{
+		spawner::SpawnBatch,
+		stats::{Health, Life, MaxHealth},
+	},
+	plugins::player::Player,
+	resources::utils::RandomGen,
 };
 use bevy::{ecs::entity_disabling::Disabled, prelude::*};
 use bevy_rapier2d::prelude::*;
@@ -25,9 +29,16 @@ impl Plugin for EnemySpawnerPlugin {
 	fn build(&self, app: &mut App) {
 		app.add_systems(Startup, (prepare_prefabs, create_spawners).chain());
 		app.add_systems(Update, (spawners_batching, spawners_spawning));
+		app.add_systems(PostUpdate, infinite_health);
 		#[cfg(debug_assertions)]
 		app.add_systems(Update, spawner_viz);
 	}
+}
+
+fn infinite_health(player: Single<(&mut Health, &mut Life, &MaxHealth), With<Player>>) {
+	let (mut health, mut life, max) = player.into_inner();
+	health.0 = max.0;
+	life.0 = true;
 }
 
 #[derive(Resource, Reflect)]
@@ -91,7 +102,7 @@ fn prepare_prefabs(
 			Disabled,
 			DeathScatter {
 				count: 40,
-				pattern: ScatterPattern::Spiral { angle: 360., rate: 25. },
+				pattern: ScatterPattern::Spiral { angle: 10., rate: 25. },
 				damage: 10.,
 			},
 		))
@@ -133,7 +144,7 @@ fn create_spawners(mut commands: Commands, prefabs: Res<Prefabs>) {
 			Spawner {
 				max_batch_size: 5,
 				min_batch_size: 1,
-				prefabs: vec![prefabs.chaser],
+				prefabs: vec![prefabs.chaser, prefabs.charger, prefabs.hover],
 				spawn_effect: Entity::PLACEHOLDER,
 				spawn_range: 100.,
 				spawn_rate: Timer::from_seconds(10., TimerMode::Repeating),
@@ -169,7 +180,7 @@ fn spawner_viz(mut gizmos: Gizmos, query: Query<(&Transform, &Spawner, &SpawnBat
 	}
 }
 
-fn spawners_batching(query: Query<(&mut Spawner, &mut SpawnBatch)>, time: Res<Time>, mut rng: ResMut<RNG>) {
+fn spawners_batching(query: Query<(&mut Spawner, &mut SpawnBatch)>, time: Res<Time>, mut rng: ResMut<RandomGen>) {
 	for (mut spawner, mut batch) in query {
 		spawner.spawn_rate.tick(time.delta());
 		if spawner.spawn_rate.finished() {
@@ -182,7 +193,7 @@ fn spawners_spawning(
 	query: Query<(&Transform, &mut Spawner, &mut SpawnBatch)>,
 	time: Res<Time>,
 	mut commands: Commands,
-	mut rng: ResMut<RNG>,
+	mut rng: ResMut<RandomGen>,
 ) {
 	for (transform, mut spawner, mut batch) in query {
 		if batch.0 == 0 {

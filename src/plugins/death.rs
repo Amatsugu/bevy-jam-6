@@ -12,7 +12,7 @@ use crate::{
 		tags::Projectile,
 		utils::Lifetime,
 	},
-	resources::utils::RNG,
+	resources::utils::RandomGen,
 };
 
 use super::player::Player;
@@ -44,7 +44,7 @@ fn death_scatter(
 	player: Single<&Transform, With<Player>>,
 	mut commands: Commands,
 	mesh_data: Res<Projectiles>,
-	mut rng: ResMut<RNG>,
+	mut rng: ResMut<RandomGen>,
 ) {
 	for (transform, scatter, life, entity) in query {
 		if life.is_alive() {

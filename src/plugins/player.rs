@@ -2,38 +2,24 @@ use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_rapier2d::prelude::*;
 
 use crate::{
-	PLAYER_GROUP, PLAYER_OWNED_GROUP, PLAYER_PROJECTILE_GROUP,
+	PLAYER_GROUP,
 	components::{
-		stats::{Damage, FireRate, MaxHealth, MoveSpeed, MoveSpeedStat},
-		tags::{MainCamera, Projectile},
-		utils::Lifetime,
+		stats::{MaxHealth, MoveSpeed, MoveSpeedStat},
+		tags::MainCamera,
+		weapons::{ProjectileType, Weapon, WeaponFiring},
 	},
 };
 
 pub struct PlayerPlugin;
 #[derive(Component, Default, Reflect)]
-#[require(MaxHealth(200.), MoveSpeedStat(100.), FireRate, Transform, Visibility)]
+#[require(MaxHealth(200.), MoveSpeedStat(100.), Transform, Visibility, Weapon)]
 pub struct Player;
 
 impl Plugin for PlayerPlugin {
 	fn build(&self, app: &mut App) {
-		app.register_type::<Projectiles>();
-		app.add_systems(Startup, (spawn_player, init_meshes));
+		app.add_systems(Startup, spawn_player);
 		app.add_systems(Update, (player_movement, look_at_mouse, fire_projectile));
 	}
-}
-
-#[derive(Resource, Reflect, Default)]
-struct Projectiles {
-	mesh: Handle<Mesh>,
-	mat: Handle<ColorMaterial>,
-}
-
-fn init_meshes(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<ColorMaterial>>) {
-	commands.insert_resource(Projectiles {
-		mesh: meshes.add(Circle::new(2.)),
-		mat: materials.add(Color::linear_rgb(1.0, 0.6, 0.16)),
-	});
 }
 
 fn spawn_player(
@@ -43,8 +29,14 @@ fn spawn_player(
 ) {
 	commands.spawn((
 		Player,
+		Weapon::Auto,
+		ProjectileType::Basic {
+			damage: 100.,
+			speed: 200.,
+			multishot: 1,
+		},
 		RigidBody::KinematicPositionBased,
-		FireRate::new(5.),
+		ActiveEvents::COLLISION_EVENTS,
 		Collider::ball(10.),
 		Name::new("Player"),
 		Mesh2d(meshes.add(Circle::new(10.))),
@@ -97,32 +89,6 @@ fn look_at_mouse(
 	}
 }
 
-fn fire_projectile(
-	player: Single<(&Transform, &mut FireRate), With<Player>>,
-	mouse: Res<ButtonInput<MouseButton>>,
-	mut commands: Commands,
-	projectiles: Res<Projectiles>,
-	time: Res<Time>,
-) {
-	let (player_transform, mut firerate) = player.into_inner();
-	if !firerate.0.finished() {
-		firerate.0.tick(time.delta());
-	}
-	if firerate.0.finished() && mouse.pressed(MouseButton::Left) {
-		firerate.0.tick(time.delta());
-		commands.spawn((
-			Projectile::player(),
-			Damage(30.),
-			Transform::from_translation(player_transform.translation + player_transform.up() * 20.),
-			Lifetime::new(5.),
-			RigidBody::Dynamic,
-			Velocity::linear(player_transform.up().xy() * 200.),
-			Mesh2d(projectiles.mesh.clone()),
-			ActiveEvents::COLLISION_EVENTS,
-			MeshMaterial2d(projectiles.mat.clone()),
-			Collider::ball(2.),
-			Sensor,
-			CollisionGroups::new(PLAYER_PROJECTILE_GROUP, Group::ALL ^ PLAYER_OWNED_GROUP),
-		));
-	}
+fn fire_projectile(mut player_firing: Single<&mut WeaponFiring, With<Player>>, mouse: Res<ButtonInput<MouseButton>>) {
+	player_firing.0 = mouse.pressed(MouseButton::Left);
 }

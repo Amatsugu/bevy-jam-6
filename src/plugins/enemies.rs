@@ -17,7 +17,7 @@ impl Plugin for EnemiesPlugin {
 			(set_ai_chase_target, set_ai_hover_target, set_ai_charge_target),
 		);
 		app.add_systems(Update, move_ai);
-		app.add_systems(PostUpdate, (process_life, ai_charge_collision));
+		app.add_systems(PostUpdate, (process_life, ai_charge_collision, ai_chase_collision));
 
 		//Debugging
 		#[cfg(feature = "ai")]
@@ -196,26 +196,42 @@ fn ai_charge_collision(
 	for event in collisiion_events.read() {
 		if let CollisionEvent::Started(a, b, _) = event {
 			if let Ok((info, charge, mut life)) = chargers.get_mut(*a) {
-				process_collision(&info, &mut life);
+				process_collision(info, &mut life);
 				if let Ok(mut health) = other_entity.get_mut(*b) {
 					health.0 -= charge.hit_damage;
 				}
 			} else if let Ok((info, charge, mut life)) = chargers.get_mut(*b) {
-				process_collision(&info, &mut life);
+				process_collision(info, &mut life);
 				if let Ok(mut health) = other_entity.get_mut(*a) {
 					health.0 -= charge.hit_damage;
 				}
 			}
 		}
 	}
-}
-
-fn process_collision(info: &ChargeInfo, life: &mut Life) {
-	match info.state {
-		ChargeState::Charge => {
+	fn process_collision(info: &ChargeInfo, life: &mut Life) {
+		if let ChargeState::Charge = info.state {
 			life.0 = false;
 		}
-		_ => (),
+	}
+}
+
+fn ai_chase_collision(
+	mut chasers: Query<&mut Life, With<ChaseAI>>,
+	player: Query<(), With<Player>>,
+	mut collisiion_events: EventReader<CollisionEvent>,
+) {
+	for event in collisiion_events.read() {
+		if let CollisionEvent::Started(a, b, _) = event {
+			if let Ok(mut life) = chasers.get_mut(*a) {
+				if let Ok(()) = player.get(*b) {
+					life.0 = false;
+				}
+			} else if let Ok(mut life) = chasers.get_mut(*b) {
+				if let Ok(()) = player.get(*a) {
+					life.0 = false;
+				}
+			}
+		}
 	}
 }
 

@@ -3,6 +3,12 @@ use bevy::prelude::*;
 #[derive(Component, Default, Reflect)]
 pub struct Damage(pub f32);
 
+impl From<f32> for Damage {
+	fn from(value: f32) -> Self {
+		Self(value)
+	}
+}
+
 #[derive(Component, Default, Reflect)]
 pub struct MoveSpeed(pub f32);
 

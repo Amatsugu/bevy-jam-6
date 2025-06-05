@@ -9,3 +9,4 @@ mod spawner;
 mod types;
 mod utils;
 pub use game::*;
+mod weapons;

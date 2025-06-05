@@ -1,13 +1,17 @@
 use bevy::prelude::*;
 
-use crate::components::{
-	ai::*,
-	death::*,
-	effects::{Explosion, ExplosionProgress},
-	spawner::*,
-	stats::*,
-	tags::*,
-	utils::*,
+use crate::{
+	components::{
+		ai::*,
+		death::*,
+		effects::{Explosion, ExplosionProgress},
+		spawner::*,
+		stats::*,
+		tags::*,
+		utils::*,
+		weapons::{ProjectileType, Weapon, WeaponAuto, WeaponBeam, WeaponBurst, WeaponFiring, WeaponSpread},
+	},
+	resources::effects::ExplosionMeshData,
 };
 
 pub struct TypesPlugin;
@@ -38,5 +42,13 @@ impl Plugin for TypesPlugin {
 		app.register_type::<SpawnBatch>();
 		app.register_type::<Explosion>();
 		app.register_type::<ExplosionProgress>();
+		app.register_type::<ExplosionMeshData>();
+		app.register_type::<Weapon>();
+		app.register_type::<WeaponFiring>();
+		app.register_type::<WeaponAuto>();
+		app.register_type::<WeaponBeam>();
+		app.register_type::<WeaponBurst>();
+		app.register_type::<WeaponSpread>();
+		app.register_type::<ProjectileType>();
 	}
 }

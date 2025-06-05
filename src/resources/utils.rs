@@ -8,9 +8,9 @@ use rand::{
 use rand_chacha::ChaChaRng;
 
 #[derive(Resource)]
-pub struct RNG(pub ChaChaRng);
+pub struct RandomGen(pub ChaChaRng);
 
-impl RNG {
+impl RandomGen {
 	pub fn range<T, R>(&mut self, range: R) -> T
 	where
 		T: SampleUniform,
@@ -20,15 +20,16 @@ impl RNG {
 	}
 
 	pub fn point_on_circle_vec3(&mut self, range: f32) -> Vec3 {
-		let angle = self.0.random_range(0.0..TAU);
-		let len = self.0.random_range(0.0..range);
-		return Vec3::new(angle.cos(), angle.sin(), 0.0) * len;
+		return self.point_on_circle_vec2(range).extend(0.0);
 	}
 
-	#[allow(dead_code)]
 	pub fn point_on_circle_vec2(&mut self, range: f32) -> Vec2 {
-		let angle = self.0.random_range(0.0..TAU);
 		let len = self.0.random_range(0.0..range);
-		return Vec2::new(angle.cos(), angle.sin()) * len;
+		return self.point_on_unit_circle() * len;
+	}
+
+	pub fn point_on_unit_circle(&mut self) -> Vec2 {
+		let angle = self.0.random_range(0.0..TAU);
+		return Vec2::new(angle.cos(), angle.sin());
 	}
 }

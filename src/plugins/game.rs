@@ -1,4 +1,10 @@
-use bevy::prelude::*;
+use bevy::{
+	core_pipeline::{
+		bloom::Bloom,
+		tonemapping::{DebandDither, Tonemapping},
+	},
+	prelude::*,
+};
 use bevy_rapier2d::plugin::RapierConfiguration;
 #[cfg(debug_assertions)]
 use iyes_perf_ui::{
@@ -10,8 +16,8 @@ use rand_chacha::ChaChaRng;
 
 use crate::{
 	components::tags::MainCamera,
-	plugins::{effects::EffectsPlugin, spawner::EnemySpawnerPlugin, types::TypesPlugin},
-	resources::utils::RNG,
+	plugins::{effects::EffectsPlugin, spawner::EnemySpawnerPlugin, types::TypesPlugin, weapons::WeaponsPlugin},
+	resources::utils::RandomGen,
 };
 
 use super::{
@@ -35,10 +41,11 @@ impl Plugin for GamePlugin {
 			ProjectilesPlugin,
 			DeathPlugin,
 			EffectsPlugin,
+			WeaponsPlugin,
 		));
 		app.add_systems(Startup, (setup, disable_gravity));
 
-		app.insert_resource(RNG(ChaChaRng::seed_from_u64(0)));
+		app.insert_resource(RandomGen(ChaChaRng::seed_from_u64(0)));
 
 		#[cfg(debug_assertions)]
 		{
@@ -52,7 +59,14 @@ impl Plugin for GamePlugin {
 }
 
 fn setup(mut commands: Commands) {
-	commands.spawn((Camera2d, MainCamera));
+	commands.spawn((
+		Camera2d,
+		MainCamera,
+		Camera { hdr: true, ..default() },
+		Tonemapping::AcesFitted,
+		Bloom::default(),
+		DebandDither::Enabled,
+	));
 	#[cfg(debug_assertions)]
 	commands.spawn((
 		PerfUiEntryFPS::default(),

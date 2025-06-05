@@ -1,4 +1,4 @@
-use bevy::{ecs::query, prelude::*, time};
+use bevy::prelude::*;
 use bevy_rapier2d::prelude::CollisionEvent;
 
 use crate::{
@@ -7,6 +7,7 @@ use crate::{
 		stats::{Damage, Health, Life},
 	},
 	plugins::projectiles::apply_damage,
+	resources::effects::ExplosionMeshData,
 };
 
 pub struct EffectsPlugin;
@@ -15,6 +16,7 @@ impl Plugin for EffectsPlugin {
 	fn build(&self, app: &mut App) {
 		app.add_systems(Startup, create_meshes);
 		app.add_systems(Update, (animate_explosions, handle_explosion_hits));
+		app.add_systems(PostUpdate, init_explosions);
 	}
 }
 
@@ -23,14 +25,29 @@ fn create_meshes(
 	mut meshes: ResMut<Assets<Mesh>>,
 	mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-	//Todo
+	commands.insert_resource(ExplosionMeshData {
+		material: materials.add(Color::linear_rgba(304. / 255., 243. / 255., 161. / 255., 0.2)),
+		mesh: meshes.add(Circle::new(1.0)),
+	});
+}
+
+fn init_explosions(
+	query: Query<Entity, (With<Explosion>, Without<Mesh2d>)>,
+	mut commands: Commands,
+	mesh_data: Res<ExplosionMeshData>,
+) {
+	for entity in query {
+		commands.entity(entity).insert((
+			Mesh2d(mesh_data.mesh.clone()),
+			MeshMaterial2d(mesh_data.material.clone()),
+		));
+	}
 }
 
 fn animate_explosions(
 	query: Query<(&mut Transform, &mut ExplosionProgress, &Explosion, Entity)>,
 	time: Res<Time>,
 	mut commands: Commands,
-	mut gizmos: Gizmos,
 ) {
 	for (mut transform, mut prog, exp, entity) in query {
 		if prog.0 > exp.range {
@@ -39,7 +56,6 @@ fn animate_explosions(
 		}
 		prog.0 += exp.epansion_rate * time.delta_secs();
 		transform.scale = Vec3::splat(prog.0);
-		gizmos.circle_2d(transform.translation.xy(), prog.0, Color::linear_rgb(1.0, 1.0, 0.0));
 	}
 }
 
