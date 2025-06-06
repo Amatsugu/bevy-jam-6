@@ -43,6 +43,9 @@ impl Default for WeaponAuto {
 pub struct WeaponSpread {
 	pub damage_multi: f32,
 	pub speed_multi: f32,
+	pub shot_count: u32,
+	pub accuracy: f32,
+	pub arc: f32,
 	pub fire_rate: Timer,
 	pub recoil: f32,
 }
@@ -52,7 +55,10 @@ impl Default for WeaponSpread {
 		Self {
 			damage_multi: 0.5,
 			speed_multi: 0.8,
-			fire_rate: Timer::from_seconds(1., TimerMode::Repeating),
+			shot_count: 3,
+			accuracy: 2.,
+			arc: 40.,
+			fire_rate: Timer::from_seconds(0.5, TimerMode::Repeating),
 			recoil: 40.,
 		}
 	}
@@ -63,6 +69,7 @@ pub struct WeaponBurst {
 	pub damage_multi: f32,
 	pub speed_multi: f32,
 	pub fire_rate: Timer,
+	pub accuracy: f32,
 	pub burst: u32,
 	pub burst_rate: Timer,
 	pub cur_burst: u32,
@@ -74,8 +81,9 @@ impl Default for WeaponBurst {
 			damage_multi: 0.5,
 			speed_multi: 1.5,
 			fire_rate: Timer::from_seconds(1., TimerMode::Repeating),
+			accuracy: 3.,
 			burst: 3,
-			burst_rate: Timer::from_seconds(1. / 5., TimerMode::Repeating),
+			burst_rate: Timer::from_seconds(1. / 10., TimerMode::Repeating),
 			cur_burst: 0,
 		}
 	}
@@ -98,7 +106,7 @@ impl Default for WeaponBeam {
 	}
 }
 
-#[derive(Component, Reflect)]
+#[derive(Component, Reflect, Clone, Copy)]
 pub enum ProjectileType {
 	Basic {
 		damage: f32,
@@ -122,6 +130,7 @@ pub enum ProjectileType {
 		speed: f32,
 		multishot: u32,
 		bounce_limit: u32,
+		fuse: f32,
 		drag: f32,
 		explosive_range: f32,
 		explosive_speed: f32,

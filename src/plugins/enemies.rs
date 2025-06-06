@@ -1,3 +1,5 @@
+use std::f32::consts::FRAC_PI_3;
+
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
@@ -130,7 +132,15 @@ fn set_ai_hover_target(
 		let dist = dir.length_squared();
 		tgt.look_at = player_pos;
 		if hover.is_in_range_squared(dist) {
-			tgt.move_to = transform.translation.xy();
+			let dist_from_move = (transform.translation.xy() - tgt.move_to.xy()).length_squared();
+			if dist_from_move < 1. {
+				let player_look = player.up().xy();
+				let side = if player_look.dot(-dir) >= 0. { 1.0 } else { -1.0 };
+				let new_tgt = player_pos
+					+ (Quat::from_axis_angle(Vec3::Z, side * FRAC_PI_3) * player_look.extend(0.)).xy()
+						* hover.hover_distance;
+				tgt.move_to = new_tgt;
+			}
 		} else {
 			let dir_normalized = dir.normalize_or(Vec2::Y);
 			tgt.move_to = player_pos + (dir_normalized * hover.hover_distance);

@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+use crate::components::stats::Life;
+
 #[derive(Component, Reflect)]
 pub struct DeathExplosion {
 	pub range: f32,
@@ -8,6 +10,7 @@ pub struct DeathExplosion {
 }
 
 #[derive(Component, Reflect, Default, Clone, Copy)]
+#[require(Life, Transform)]
 pub struct DeathScatter {
 	pub count: u32,
 	pub pattern: ScatterPattern,

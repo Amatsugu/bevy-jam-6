@@ -1,9 +1,5 @@
 use crate::{
-	components::{
-		spawner::SpawnBatch,
-		stats::{Health, Life, MaxHealth},
-	},
-	plugins::player::Player,
+	components::{spawner::SpawnBatch, stats::MaxHealth},
 	resources::utils::RandomGen,
 };
 use bevy::{ecs::entity_disabling::Disabled, prelude::*};
@@ -29,16 +25,9 @@ impl Plugin for EnemySpawnerPlugin {
 	fn build(&self, app: &mut App) {
 		app.add_systems(Startup, (prepare_prefabs, create_spawners).chain());
 		app.add_systems(Update, (spawners_batching, spawners_spawning));
-		app.add_systems(PostUpdate, infinite_health);
 		#[cfg(debug_assertions)]
 		app.add_systems(Update, spawner_viz);
 	}
-}
-
-fn infinite_health(player: Single<(&mut Health, &mut Life, &MaxHealth), With<Player>>) {
-	let (mut health, mut life, max) = player.into_inner();
-	health.0 = max.0;
-	life.0 = true;
 }
 
 #[derive(Resource, Reflect)]
@@ -60,7 +49,7 @@ fn prepare_prefabs(
 			Name::new("Charger"),
 			ChargeAI {
 				distance: 200.,
-				speed_multi: 10.,
+				speed_multi: 20.,
 				hit_damage: 70.,
 			},
 			ActiveEvents::COLLISION_EVENTS,
@@ -102,7 +91,7 @@ fn prepare_prefabs(
 			Disabled,
 			DeathScatter {
 				count: 40,
-				pattern: ScatterPattern::Spiral { angle: 10., rate: 25. },
+				pattern: ScatterPattern::Spiral { angle: 370., rate: 50. },
 				damage: 10.,
 			},
 		))
@@ -125,9 +114,9 @@ fn prepare_prefabs(
 				count: 50,
 				pattern: ScatterPattern::Explosion {
 					range: 100.,
-					speed: 40.,
+					speed: 80.,
 				},
-				damage: 10.,
+				damage: 40.,
 			},
 		))
 		.id();
@@ -142,8 +131,8 @@ fn create_spawners(mut commands: Commands, prefabs: Res<Prefabs>) {
 		commands.spawn((
 			Transform::from_translation(dir),
 			Spawner {
-				max_batch_size: 5,
-				min_batch_size: 1,
+				max_batch_size: 8,
+				min_batch_size: 2,
 				prefabs: vec![prefabs.chaser, prefabs.charger, prefabs.hover],
 				spawn_effect: Entity::PLACEHOLDER,
 				spawn_range: 100.,

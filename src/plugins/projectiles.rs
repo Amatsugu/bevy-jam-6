@@ -68,7 +68,7 @@ fn handle_projectiles(
 	}
 }
 pub fn process_contacts(contacts: &mut ContactLimit, entity: Entity, commands: &mut Commands) {
-	if contacts.0 > 1 {
+	if contacts.0 > 0 {
 		contacts.0 -= 1;
 	}
 	if contacts.0 == 0 {

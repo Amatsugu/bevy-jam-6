@@ -10,6 +10,7 @@ use crate::{
 		utils::Lifetime,
 		weapons::*,
 	},
+	plugins::player::Player,
 	resources::utils::RandomGen,
 };
 
@@ -32,31 +33,53 @@ fn weapon_firing(
 		&mut WeaponBurst,
 		&mut WeaponSpread,
 		&ProjectileType,
+		Option<&Player>,
 	)>,
 	time: Res<Time>,
 	mut commands: Commands,
 	mut rng: ResMut<RandomGen>,
 ) {
-	for (transform, firing, life, weapon, mut _beam, mut auto, mut _burst, mut _spread, proj) in query {
+	for (transform, firing, life, weapon, mut _beam, mut auto, mut burst, mut spread, proj, player) in query {
 		if life.is_dead() || firing.is_not_firing() {
 			continue;
 		}
+		let owner = if player.is_some() { Owner::Player } else { Owner::Enemy };
 		let aim = transform.up().as_vec3();
 		match weapon {
 			Weapon::Auto => {
 				auto.fire_rate.tick(time.delta());
 				if auto.fire_rate.finished() {
 					let volley = proj.multishot() * auto.fire_rate.times_finished_this_tick();
-					let bundle = prepare_auto_volley(volley, aim, transform.translation, &auto, proj, &mut rng);
-					match bundle {
-						ProjBatch::Normal(proj_bundles) => commands.spawn_batch(proj_bundles),
-						ProjBatch::Sensor(sensor_projs) => commands.spawn_batch(sensor_projs),
-						ProjBatch::Scatter(scatter_projs) => commands.spawn_batch(scatter_projs),
+					prepare_auto_volley(volley, aim, transform.translation, &auto, proj, owner, &mut rng)
+						.spawn(&mut commands);
+				}
+			}
+			Weapon::Spread => {
+				spread.fire_rate.tick(time.delta());
+				if spread.fire_rate.finished() {
+					let angle_offset = rng.range((-spread.accuracy)..spread.accuracy);
+					let adjusted_aim = Quat::from_axis_angle(Vec3::Z, angle_offset.to_radians()) * aim;
+					let volley = (proj.multishot() + spread.shot_count) * spread.fire_rate.times_finished_this_tick();
+					prepare_spread_volley(volley, adjusted_aim, transform.translation, &spread, proj, owner)
+						.spawn(&mut commands);
+				}
+			}
+			Weapon::Burst => {
+				if burst.cur_burst == 0 {
+					burst.fire_rate.tick(time.delta());
+					if burst.fire_rate.finished() {
+						burst.cur_burst = (proj.multishot() + burst.burst) * burst.fire_rate.times_finished_this_tick();
+					}
+				} else {
+					burst.burst_rate.tick(time.delta());
+					if burst.burst_rate.finished() {
+						let shots = burst.burst_rate.times_finished_this_tick().min(burst.cur_burst);
+						burst.cur_burst -= shots;
+						prepare_burst_volley(shots, aim, transform.translation, &burst, proj, owner, &mut rng)
+							.spawn(&mut commands);
 					}
 				}
 			}
-			Weapon::Spread => todo!(),
-			Weapon::Burst => todo!(),
 			Weapon::Beam => todo!(),
 		}
 	}
@@ -75,6 +98,16 @@ struct ProjBundle {
 	contacts: ContactLimit,
 	life: Lifetime,
 	drag: Damping,
+}
+
+impl ProjBatch {
+	pub fn spawn(self, commands: &mut Commands) {
+		match self {
+			ProjBatch::Normal(proj_bundles) => commands.spawn_batch(proj_bundles),
+			ProjBatch::Sensor(sensor_projs) => commands.spawn_batch(sensor_projs),
+			ProjBatch::Scatter(scatter_projs) => commands.spawn_batch(scatter_projs),
+		}
+	}
 }
 
 #[derive(Bundle, Default)]
@@ -96,6 +129,20 @@ impl Default for ProjBatch {
 }
 const PROJECTILE_SIZE: f32 = 2.;
 const PROJECTILE_LIFETIME: f32 = 5.;
+const DEFAULT_MAX_CONTACT: u32 = 1;
+const DEFAULT_DRAG: f32 = 0.0;
+
+fn prepare_spread_volley(
+	volley: u32,
+	aim: Vec3,
+	pos: Vec3,
+	spread: &WeaponSpread,
+	proj: &ProjectileType,
+	owner: Owner,
+) -> ProjBatch {
+	let aim_pos = determine_spread_aim_and_pos(pos, aim, 10., spread.arc, volley);
+	return create_projectile_batch(proj, owner, spread.speed_multi, spread.damage_multi, aim_pos);
+}
 
 fn prepare_auto_volley(
 	volley: u32,
@@ -103,24 +150,49 @@ fn prepare_auto_volley(
 	pos: Vec3,
 	auto: &WeaponAuto,
 	proj: &ProjectileType,
+	owner: Owner,
 	rng: &mut RandomGen,
+) -> ProjBatch {
+	let aim_pos = determine_aim_and_pos(pos, aim, 10., auto.accuracy / 2., volley, rng);
+	return create_projectile_batch(proj, owner, auto.speed_multi, auto.damage_multi, aim_pos);
+}
+
+fn prepare_burst_volley(
+	volley: u32,
+	aim: Vec3,
+	pos: Vec3,
+	burst: &WeaponBurst,
+	proj: &ProjectileType,
+	owner: Owner,
+	rng: &mut RandomGen,
+) -> ProjBatch {
+	let aim_pos = determine_aim_and_pos(pos, aim, 10., burst.accuracy / 2., volley, rng);
+	return create_projectile_batch(proj, owner, burst.speed_multi, burst.damage_multi, aim_pos);
+}
+
+fn create_projectile_batch(
+	proj: &ProjectileType,
+	owner: Owner,
+	speed_multi: f32,
+	damage_multi: f32,
+	aim_pos: Vec<(Vec2, Vec3)>,
 ) -> ProjBatch {
 	match proj {
 		ProjectileType::Basic { damage, speed, .. } => {
-			let bundles = determine_aim_and_pos(pos, aim, 10., auto.accuracy / 2., volley, rng)
+			let bundles = aim_pos
 				.iter()
 				.map(|(aim, pos)| {
 					fire_projectile(
 						*pos,
-						aim * speed * auto.speed_multi,
-						damage * auto.damage_multi,
+						aim * speed * speed_multi,
+						damage * damage_multi,
 						PROJECTILE_LIFETIME,
 						PROJECTILE_SIZE,
 						PLAYER_PROJECTILE_GROUP,
 						Group::ALL ^ PLAYER_OWNED_GROUP,
-						1,
-						0.0,
-						Owner::Player,
+						DEFAULT_MAX_CONTACT,
+						DEFAULT_DRAG,
+						owner,
 					)
 				})
 				.collect();
@@ -132,20 +204,20 @@ fn prepare_auto_volley(
 			penetration,
 			..
 		} => {
-			let bundles = determine_aim_and_pos(pos, aim, 10., auto.accuracy / 2., volley, rng)
+			let bundles = aim_pos
 				.iter()
 				.map(|(aim, pos)| {
 					fire_sensor_projectile(
 						*pos,
-						aim * speed * auto.speed_multi,
-						damage * auto.damage_multi,
+						aim * speed * speed_multi,
+						damage * damage_multi,
 						PROJECTILE_LIFETIME,
 						PROJECTILE_SIZE,
 						PLAYER_PROJECTILE_GROUP,
 						ENEMY_OWNED_GROUP,
 						*penetration,
-						0.0,
-						Owner::Player,
+						DEFAULT_DRAG,
+						owner,
 					)
 				})
 				.collect();
@@ -157,20 +229,20 @@ fn prepare_auto_volley(
 			bounce_limit,
 			..
 		} => {
-			let bundles = determine_aim_and_pos(pos, aim, 10., auto.accuracy / 2., volley, rng)
+			let bundles = aim_pos
 				.iter()
 				.map(|(aim, pos)| {
 					fire_projectile(
 						*pos,
-						aim * speed * auto.speed_multi,
-						damage * auto.damage_multi,
+						aim * speed * speed_multi,
+						damage * damage_multi,
 						PROJECTILE_LIFETIME,
 						PROJECTILE_SIZE,
 						PLAYER_PROJECTILE_GROUP,
 						ENEMY_OWNED_GROUP,
 						*bounce_limit,
-						0.0,
-						Owner::Player,
+						DEFAULT_DRAG,
+						owner,
 					)
 				})
 				.collect();
@@ -185,12 +257,12 @@ fn prepare_auto_volley(
 			explosive_speed,
 			..
 		} => {
-			let bundles = determine_aim_and_pos(pos, aim, 10., auto.accuracy / 2., volley, rng)
+			let bundles = aim_pos
 				.iter()
 				.map(|(aim, pos)| {
 					fire_scatter_projectile(
 						*pos,
-						aim * speed * auto.speed_multi,
+						aim * speed * speed_multi,
 						0.0,
 						PROJECTILE_LIFETIME,
 						PROJECTILE_SIZE,
@@ -199,14 +271,14 @@ fn prepare_auto_volley(
 						*bounce_limit,
 						*drag,
 						DeathScatter {
-							damage: damage * auto.damage_multi,
+							damage: damage * damage_multi,
 							pattern: ScatterPattern::Explosion {
 								range: *explosive_range,
 								speed: *explosive_speed,
 							},
 							..default()
 						},
-						Owner::Player,
+						owner,
 					)
 				})
 				.collect();
@@ -233,14 +305,7 @@ fn determine_aim_and_pos(
 		.collect()
 }
 
-#[allow(dead_code)]
-fn determine_spread_aim_and_pos(
-	origin: Vec3,
-	base_aim: Vec3,
-	offset: f32,
-	arc: f32,
-	count: usize,
-) -> Vec<(Vec2, Vec3)> {
+fn determine_spread_aim_and_pos(origin: Vec3, base_aim: Vec3, offset: f32, arc: f32, count: u32) -> Vec<(Vec2, Vec3)> {
 	let interval = arc / count as f32;
 	(0..count)
 		.map(|i| {
