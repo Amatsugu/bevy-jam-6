@@ -8,6 +8,8 @@ use crate::{
 		ai::{AI, AITarget, ChargeAI, ChargeInfo, ChargeState, ChaseAI, HoverAI},
 		stats::{Health, Life, MoveSpeed, MoveSpeedMultiplier},
 	},
+	plugins::utils::play_audio_onshot,
+	resources::audio::AudioClips,
 	state_management::{GameOverSet, GameplaySet},
 };
 
@@ -171,6 +173,8 @@ fn set_ai_charge_target(
 	)>,
 	player: Single<&Transform, With<Player>>,
 	time: Res<Time>,
+	audio: Res<AudioClips>,
+	mut commands: Commands,
 ) {
 	for (mut tgt, mut info, mut move_multi, mut life, ai, transform, charge) in query {
 		if ai.is_disabled() || life.is_dead() {
@@ -196,6 +200,7 @@ fn set_ai_charge_target(
 					info.cooldown.reset();
 					info.charge_dir = (player.translation.xy() - transform.translation.xy()).normalize_or_zero();
 					move_multi.0 = charge.speed_multi;
+					play_audio_onshot(&mut commands, audio.dash.clone());
 				}
 			}
 			ChargeState::Charge => {

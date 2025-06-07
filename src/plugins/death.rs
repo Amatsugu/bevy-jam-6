@@ -1,6 +1,6 @@
 use std::f32::consts::PI;
 
-use bevy::prelude::*;
+use bevy::{audio::Volume, prelude::*};
 use bevy_rapier2d::prelude::*;
 
 use crate::{
@@ -119,6 +119,7 @@ fn sprial_spawner(
 	mut query: Query<(&GlobalTransform, &mut SpiralSpawner, &ChildOf)>,
 	time: Res<Time>,
 	mut commands: Commands,
+	audio: Res<AudioClips>,
 ) {
 	for (transform, mut spiral, parent) in &mut query {
 		if spiral.spawn_count >= spiral.count {
@@ -134,12 +135,16 @@ fn sprial_spawner(
 				spiral.spawn_count += 1;
 				let angle = spiral.angle * spiral.spawn_count as f32;
 				let dir = Vec2::from_angle(angle.to_radians());
-				commands.spawn(get_projectile(
-					transform.translation().xy() + dir * 20.,
-					dir * 200.,
-					spiral.damage,
-					spiral.mesh.clone(),
-					spiral.material.clone(),
+				commands.spawn((
+					get_projectile(
+						transform.translation().xy() + dir * 20.,
+						dir * 200.,
+						spiral.damage,
+						spiral.mesh.clone(),
+						spiral.material.clone(),
+					),
+					AudioPlayer::new(audio.spiral.clone()),
+					PlaybackSettings::ONCE.with_volume(Volume::Linear(0.8)),
 				));
 			}
 		}

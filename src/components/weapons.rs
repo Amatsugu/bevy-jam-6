@@ -26,6 +26,7 @@ pub struct WeaponAuto {
 	pub fire_rate: Timer,
 	//Degrees
 	pub accuracy: f32,
+	pub recoil: f32,
 }
 
 impl Default for WeaponAuto {
@@ -35,6 +36,7 @@ impl Default for WeaponAuto {
 			speed_multi: 1.,
 			fire_rate: Timer::from_seconds(1. / 5., TimerMode::Repeating),
 			accuracy: 5.,
+			recoil: 20.,
 		}
 	}
 }
@@ -73,6 +75,7 @@ pub struct WeaponBurst {
 	pub burst: u32,
 	pub burst_rate: Timer,
 	pub cur_burst: u32,
+	pub recoil: f32,
 }
 
 impl Default for WeaponBurst {
@@ -85,6 +88,7 @@ impl Default for WeaponBurst {
 			burst: 3,
 			burst_rate: Timer::from_seconds(1. / 10., TimerMode::Repeating),
 			cur_burst: 0,
+			recoil: 20.,
 		}
 	}
 }
@@ -94,6 +98,7 @@ pub struct WeaponBeam {
 	pub damage_multi: f32,
 	pub hit_rate: Timer,
 	pub max_range: f32,
+	pub recoil: f32,
 }
 
 impl Default for WeaponBeam {
@@ -102,6 +107,7 @@ impl Default for WeaponBeam {
 			damage_multi: 0.7,
 			hit_rate: Timer::from_seconds(1. / 5., TimerMode::Repeating),
 			max_range: 300.,
+			recoil: 40.,
 		}
 	}
 }

@@ -187,6 +187,8 @@ fn load_auido(mut commands: Commands, asset_server: Res<AssetServer>) {
 	commands.insert_resource(AudioClips {
 		start: asset_server.load("sounds/start.wav"),
 		explosion: asset_server.load("sounds/explosion.wav"),
+		spiral: asset_server.load("sounds/spiral.wav"),
+		dash: asset_server.load("sounds/dash.wav"),
 		hit: asset_server.load("sounds/hit.wav"),
 		hurt: asset_server.load("sounds/hurt.wav"),
 		shoot_auto: asset_server.load("sounds/shoot_auto.wav"),

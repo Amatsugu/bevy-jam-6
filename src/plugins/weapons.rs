@@ -26,6 +26,7 @@ impl Plugin for WeaponsPlugin {
 fn weapon_firing(
 	query: Query<(
 		&Transform,
+		&mut Velocity,
 		&WeaponFiring,
 		&Life,
 		&Weapon,
@@ -41,7 +42,7 @@ fn weapon_firing(
 	mut rng: ResMut<RandomGen>,
 	audio: Res<AudioClips>,
 ) {
-	for (transform, firing, life, weapon, mut _beam, mut auto, mut burst, mut spread, proj, player) in query {
+	for (transform, mut vel, firing, life, weapon, mut _beam, mut auto, mut burst, mut spread, proj, player) in query {
 		if life.is_dead() || firing.is_not_firing() {
 			continue;
 		}
@@ -51,6 +52,7 @@ fn weapon_firing(
 			Weapon::Auto => {
 				auto.fire_rate.tick(time.delta());
 				if auto.fire_rate.finished() {
+					vel.linvel += transform.up().xy() * -auto.recoil;
 					play_audio_onshot(&mut commands, audio.shoot_auto.clone());
 					let volley = proj.multishot() * auto.fire_rate.times_finished_this_tick();
 					prepare_auto_volley(volley, aim, transform.translation, &auto, proj, owner, &mut rng)
@@ -60,6 +62,7 @@ fn weapon_firing(
 			Weapon::Spread => {
 				spread.fire_rate.tick(time.delta());
 				if spread.fire_rate.finished() {
+					vel.linvel += transform.up().xy() * -spread.recoil;
 					play_audio_onshot(&mut commands, audio.shoot_spread.clone());
 					let angle_offset = rng.range((-spread.accuracy)..spread.accuracy);
 					let adjusted_aim = Quat::from_axis_angle(Vec3::Z, angle_offset.to_radians()) * aim;
@@ -72,12 +75,13 @@ fn weapon_firing(
 				if burst.cur_burst == 0 {
 					burst.fire_rate.tick(time.delta());
 					if burst.fire_rate.finished() {
-						play_audio_onshot(&mut commands, audio.shoot_burst.clone());
 						burst.cur_burst = (proj.multishot() + burst.burst) * burst.fire_rate.times_finished_this_tick();
 					}
 				} else {
 					burst.burst_rate.tick(time.delta());
 					if burst.burst_rate.finished() {
+						vel.linvel += transform.up().xy() * -burst.recoil;
+						play_audio_onshot(&mut commands, audio.shoot_burst.clone());
 						let shots = burst.burst_rate.times_finished_this_tick().min(burst.cur_burst);
 						burst.cur_burst -= shots;
 						prepare_burst_volley(shots, aim, transform.translation, &burst, proj, owner, &mut rng)

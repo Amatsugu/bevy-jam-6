@@ -57,7 +57,8 @@ impl Plugin for PlayerPlugin {
 			(player_movement, look_at_mouse, fire_projectile, change_projectile).in_set(GameplaySet),
 		);
 		app.add_systems(PostUpdate, gameover_transition.in_set(GameplaySet));
-		// app.add_systems(PostUpdate, infinite_health.in_set(GameplaySet));
+		#[cfg(debug_assertions)]
+		app.add_systems(PostUpdate, infinite_health.in_set(GameplaySet));
 	}
 }
 
