@@ -29,7 +29,8 @@ use crate::{
 		utils::{Fonts, RandomGen},
 	},
 	state_management::{
-		GameCleanupSet, GameOverSet, GameStartSet, GameWaitingSet, GameplaySet, GameplayState, ResetSet,
+		GameCleanupSystems, GameOverSystems, GameStartSystems, GameWaitingSystems, GameplayState, GameplaySystems,
+		ResetSystems,
 	},
 };
 
@@ -62,9 +63,9 @@ impl Plugin for GamePlugin {
 		));
 		app.add_systems(PreStartup, (setup, spwan_bounds, load_auido));
 		app.add_systems(PostStartup, disable_gravity);
-		app.add_systems(Last, cleanup.in_set(GameCleanupSet));
-		app.add_systems(Last, reset_transition.in_set(ResetSet));
-		app.add_systems(Last, start_transition.in_set(GameStartSet));
+		app.add_systems(Last, cleanup.in_set(GameCleanupSystems));
+		app.add_systems(Last, reset_transition.in_set(ResetSystems));
+		app.add_systems(Last, start_transition.in_set(GameStartSystems));
 
 		app.insert_resource(RandomGen(ChaChaRng::seed_from_u64(0)));
 
@@ -82,32 +83,32 @@ impl Plugin for GamePlugin {
 }
 
 fn setup_sets(app: &mut App) {
-	app.configure_sets(PreUpdate, ResetSet.run_if(in_state(GameplayState::Reset)));
-	app.configure_sets(Update, ResetSet.run_if(in_state(GameplayState::Reset)));
-	app.configure_sets(PostUpdate, ResetSet.run_if(in_state(GameplayState::Reset)));
-	app.configure_sets(Last, ResetSet.run_if(in_state(GameplayState::Reset)));
+	app.configure_sets(PreUpdate, ResetSystems.run_if(in_state(GameplayState::Reset)));
+	app.configure_sets(Update, ResetSystems.run_if(in_state(GameplayState::Reset)));
+	app.configure_sets(PostUpdate, ResetSystems.run_if(in_state(GameplayState::Reset)));
+	app.configure_sets(Last, ResetSystems.run_if(in_state(GameplayState::Reset)));
 
-	app.configure_sets(PreUpdate, GameWaitingSet.run_if(in_state(GameplayState::Waiting)));
-	app.configure_sets(Update, GameWaitingSet.run_if(in_state(GameplayState::Waiting)));
-	app.configure_sets(PostUpdate, GameWaitingSet.run_if(in_state(GameplayState::Waiting)));
+	app.configure_sets(PreUpdate, GameWaitingSystems.run_if(in_state(GameplayState::Waiting)));
+	app.configure_sets(Update, GameWaitingSystems.run_if(in_state(GameplayState::Waiting)));
+	app.configure_sets(PostUpdate, GameWaitingSystems.run_if(in_state(GameplayState::Waiting)));
 
-	app.configure_sets(PostUpdate, GameStartSet.run_if(in_state(GameplayState::Startup)));
-	app.configure_sets(Update, GameStartSet.run_if(in_state(GameplayState::Startup)));
-	app.configure_sets(PreUpdate, GameStartSet.run_if(in_state(GameplayState::Startup)));
-	app.configure_sets(Last, GameStartSet.run_if(in_state(GameplayState::Startup)));
+	app.configure_sets(PostUpdate, GameStartSystems.run_if(in_state(GameplayState::Startup)));
+	app.configure_sets(Update, GameStartSystems.run_if(in_state(GameplayState::Startup)));
+	app.configure_sets(PreUpdate, GameStartSystems.run_if(in_state(GameplayState::Startup)));
+	app.configure_sets(Last, GameStartSystems.run_if(in_state(GameplayState::Startup)));
 
-	app.configure_sets(PreUpdate, GameplaySet.run_if(in_state(GameplayState::Playing)));
-	app.configure_sets(Update, GameplaySet.run_if(in_state(GameplayState::Playing)));
-	app.configure_sets(PostUpdate, GameplaySet.run_if(in_state(GameplayState::Playing)));
+	app.configure_sets(PreUpdate, GameplaySystems.run_if(in_state(GameplayState::Playing)));
+	app.configure_sets(Update, GameplaySystems.run_if(in_state(GameplayState::Playing)));
+	app.configure_sets(PostUpdate, GameplaySystems.run_if(in_state(GameplayState::Playing)));
 
-	app.configure_sets(PreUpdate, GameOverSet.run_if(in_state(GameplayState::GameOver)));
-	app.configure_sets(Update, GameOverSet.run_if(in_state(GameplayState::GameOver)));
-	app.configure_sets(PostUpdate, GameOverSet.run_if(in_state(GameplayState::GameOver)));
+	app.configure_sets(PreUpdate, GameOverSystems.run_if(in_state(GameplayState::GameOver)));
+	app.configure_sets(Update, GameOverSystems.run_if(in_state(GameplayState::GameOver)));
+	app.configure_sets(PostUpdate, GameOverSystems.run_if(in_state(GameplayState::GameOver)));
 
-	app.configure_sets(PreUpdate, GameCleanupSet.run_if(in_state(GameplayState::Cleanup)));
-	app.configure_sets(Update, GameCleanupSet.run_if(in_state(GameplayState::Cleanup)));
-	app.configure_sets(PostUpdate, GameCleanupSet.run_if(in_state(GameplayState::Cleanup)));
-	app.configure_sets(Last, GameCleanupSet.run_if(in_state(GameplayState::Cleanup)));
+	app.configure_sets(PreUpdate, GameCleanupSystems.run_if(in_state(GameplayState::Cleanup)));
+	app.configure_sets(Update, GameCleanupSystems.run_if(in_state(GameplayState::Cleanup)));
+	app.configure_sets(PostUpdate, GameCleanupSystems.run_if(in_state(GameplayState::Cleanup)));
+	app.configure_sets(Last, GameCleanupSystems.run_if(in_state(GameplayState::Cleanup)));
 }
 
 fn reset_transition(mut next: ResMut<NextState<GameplayState>>) {

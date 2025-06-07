@@ -14,7 +14,7 @@ use crate::{
 	},
 	plugins::utils::play_audio_onshot,
 	resources::{audio::AudioClips, utils::RandomGen},
-	state_management::{GameOverSet, GameplaySet},
+	state_management::{GameOverSystems, GameplaySystems},
 };
 
 use super::player::Player;
@@ -24,8 +24,8 @@ pub struct DeathPlugin;
 impl Plugin for DeathPlugin {
 	fn build(&self, app: &mut App) {
 		app.add_systems(Startup, init_meshes);
-		app.add_systems(Update, (death_scatter, sprial_spawner).in_set(GameplaySet));
-		app.add_systems(Update, (death_scatter, sprial_spawner).in_set(GameOverSet));
+		app.add_systems(Update, (death_scatter, sprial_spawner).in_set(GameplaySystems));
+		app.add_systems(Update, (death_scatter, sprial_spawner).in_set(GameOverSystems));
 	}
 }
 

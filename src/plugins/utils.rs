@@ -5,7 +5,7 @@ use crate::{
 		stats::{Life, MoveSpeed, MoveSpeedMultiplier, MoveSpeedStat},
 		utils::{Cleanable, Lifetime},
 	},
-	state_management::{GameOverSet, GameplaySet},
+	state_management::{GameOverSystems, GameplaySystems},
 };
 
 pub struct UtilsPlugin;
@@ -14,14 +14,14 @@ impl Plugin for UtilsPlugin {
 	fn build(&self, app: &mut App) {
 		app.add_systems(
 			PostUpdate,
-			(process_lifetimes, process_lifetimes_life).in_set(GameOverSet),
+			(process_lifetimes, process_lifetimes_life).in_set(GameOverSystems),
 		);
 		app.add_systems(
 			PostUpdate,
-			(process_lifetimes, process_lifetimes_life).in_set(GameplaySet),
+			(process_lifetimes, process_lifetimes_life).in_set(GameplaySystems),
 		);
-		app.add_systems(PreUpdate, process_move_speed.in_set(GameplaySet));
-		app.add_systems(PreUpdate, process_move_speed.in_set(GameOverSet));
+		app.add_systems(PreUpdate, process_move_speed.in_set(GameplaySystems));
+		app.add_systems(PreUpdate, process_move_speed.in_set(GameOverSystems));
 	}
 }
 fn process_lifetimes(

@@ -8,7 +8,7 @@ use crate::{
 	},
 	plugins::projectiles::apply_damage,
 	resources::effects::ExplosionMeshData,
-	state_management::{GameOverSet, GameplaySet},
+	state_management::{GameOverSystems, GameplaySystems},
 };
 
 pub struct EffectsPlugin;
@@ -16,10 +16,16 @@ pub struct EffectsPlugin;
 impl Plugin for EffectsPlugin {
 	fn build(&self, app: &mut App) {
 		app.add_systems(Startup, create_meshes);
-		app.add_systems(Update, (animate_explosions, handle_explosion_hits).in_set(GameplaySet));
-		app.add_systems(Update, (animate_explosions, handle_explosion_hits).in_set(GameOverSet));
-		app.add_systems(PostUpdate, init_explosions.in_set(GameplaySet));
-		app.add_systems(PostUpdate, init_explosions.in_set(GameOverSet));
+		app.add_systems(
+			Update,
+			(animate_explosions, handle_explosion_hits).in_set(GameplaySystems),
+		);
+		app.add_systems(
+			Update,
+			(animate_explosions, handle_explosion_hits).in_set(GameOverSystems),
+		);
+		app.add_systems(PostUpdate, init_explosions.in_set(GameplaySystems));
+		app.add_systems(PostUpdate, init_explosions.in_set(GameOverSystems));
 	}
 }
 

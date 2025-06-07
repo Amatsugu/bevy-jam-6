@@ -12,14 +12,14 @@ use crate::{
 	},
 	plugins::{player::Player, utils::play_audio_onshot},
 	resources::{audio::AudioClips, utils::RandomGen},
-	state_management::GameplaySet,
+	state_management::GameplaySystems,
 };
 
 pub struct WeaponsPlugin;
 
 impl Plugin for WeaponsPlugin {
 	fn build(&self, app: &mut App) {
-		app.add_systems(Update, weapon_firing.in_set(GameplaySet));
+		app.add_systems(Update, weapon_firing.in_set(GameplaySystems));
 	}
 }
 

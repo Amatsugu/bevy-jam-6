@@ -5,16 +5,16 @@ use crate::{
 	components::tags::MainMenu,
 	plugins::utils::play_audio_onshot,
 	resources::{audio::AudioClips, utils::Fonts},
-	state_management::{GameWaitingSet, GameplaySet, GameplayState, ResetSet},
+	state_management::{GameWaitingSystems, GameplayState, GameplaySystems, ResetSystems},
 };
 
 pub struct MainMenuPlugin;
 
 impl Plugin for MainMenuPlugin {
 	fn build(&self, app: &mut App) {
-		app.add_systems(Update, spawn_menu.in_set(ResetSet));
-		app.add_systems(Update, menu.in_set(GameWaitingSet));
-		app.add_systems(PreUpdate, clean_menu.in_set(GameplaySet));
+		app.add_systems(Update, spawn_menu.in_set(ResetSystems));
+		app.add_systems(Update, menu.in_set(GameWaitingSystems));
+		app.add_systems(PreUpdate, clean_menu.in_set(GameplaySystems));
 	}
 }
 

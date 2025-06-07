@@ -1,7 +1,7 @@
 use crate::{
 	components::{spawner::SpawnBatch, stats::MaxHealth, utils::Cleanable},
 	resources::utils::RandomGen,
-	state_management::{GameStartSet, GameplaySet},
+	state_management::{GameStartSystems, GameplaySystems},
 };
 use bevy::{ecs::entity_disabling::Disabled, prelude::*};
 use bevy_rapier2d::prelude::*;
@@ -25,8 +25,8 @@ pub struct EnemySpawnerPlugin;
 impl Plugin for EnemySpawnerPlugin {
 	fn build(&self, app: &mut App) {
 		app.add_systems(Startup, prepare_prefabs);
-		app.add_systems(Update, create_spawners.in_set(GameStartSet));
-		app.add_systems(Update, (spawners_batching, spawners_spawning).in_set(GameplaySet));
+		app.add_systems(Update, create_spawners.in_set(GameStartSystems));
+		app.add_systems(Update, (spawners_batching, spawners_spawning).in_set(GameplaySystems));
 		#[cfg(debug_assertions)]
 		app.add_systems(Update, spawner_viz);
 	}

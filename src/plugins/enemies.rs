@@ -10,7 +10,7 @@ use crate::{
 	},
 	plugins::utils::play_audio_onshot,
 	resources::audio::AudioClips,
-	state_management::{GameOverSet, GameplaySet},
+	state_management::{GameOverSystems, GameplaySystems},
 };
 
 use super::player::Player;
@@ -21,17 +21,17 @@ impl Plugin for EnemiesPlugin {
 	fn build(&self, app: &mut App) {
 		app.add_systems(
 			PreUpdate,
-			(set_ai_chase_target, set_ai_hover_target, set_ai_charge_target).in_set(GameplaySet),
+			(set_ai_chase_target, set_ai_hover_target, set_ai_charge_target).in_set(GameplaySystems),
 		);
-		app.add_systems(Update, move_ai.in_set(GameplaySet));
+		app.add_systems(Update, move_ai.in_set(GameplaySystems));
 		app.add_systems(
 			PostUpdate,
-			(process_life, ai_charge_collision, ai_chase_collision).in_set(GameplaySet),
+			(process_life, ai_charge_collision, ai_chase_collision).in_set(GameplaySystems),
 		);
 
 		app.add_systems(
 			PostUpdate,
-			(process_life, ai_charge_collision, ai_chase_collision).in_set(GameOverSet),
+			(process_life, ai_charge_collision, ai_chase_collision).in_set(GameOverSystems),
 		);
 
 		//Debugging

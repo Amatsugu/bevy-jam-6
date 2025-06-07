@@ -8,7 +8,7 @@ use crate::{
 	},
 	plugins::{player::Player, utils::play_audio_onshot},
 	resources::audio::AudioClips,
-	state_management::{GameOverSet, GameplaySet},
+	state_management::{GameOverSystems, GameplaySystems},
 };
 
 pub struct ProjectilesPlugin;
@@ -17,10 +17,10 @@ impl Plugin for ProjectilesPlugin {
 	fn build(&self, app: &mut App) {
 		app.register_type::<Projectiles>();
 		app.add_systems(Startup, init_meshes);
-		app.add_systems(Update, handle_projectile_collisions.in_set(GameplaySet));
-		app.add_systems(Update, handle_projectile_collisions.in_set(GameOverSet));
-		app.add_systems(PostUpdate, init_projectiles.in_set(GameplaySet));
-		app.add_systems(PostUpdate, init_projectiles.in_set(GameOverSet));
+		app.add_systems(Update, handle_projectile_collisions.in_set(GameplaySystems));
+		app.add_systems(Update, handle_projectile_collisions.in_set(GameOverSystems));
+		app.add_systems(PostUpdate, init_projectiles.in_set(GameplaySystems));
+		app.add_systems(PostUpdate, init_projectiles.in_set(GameOverSystems));
 	}
 }
 #[derive(Resource, Reflect, Default)]

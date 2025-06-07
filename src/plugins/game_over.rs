@@ -4,7 +4,7 @@ use crate::{
 	components::utils::Cleanable,
 	plugins::utils::play_audio_onshot,
 	resources::{audio::AudioClips, utils::Fonts},
-	state_management::{GameOverSet, GameOverState, GameplayState},
+	state_management::{GameOverState, GameOverSystems, GameplayState},
 };
 
 pub struct GameOverPlugin;
@@ -14,9 +14,12 @@ impl Plugin for GameOverPlugin {
 		app.insert_state(GameOverState::Init);
 		app.add_systems(
 			PreUpdate,
-			spawn_menu.in_set(GameOverSet).run_if(in_state(GameOverState::Init)),
+			spawn_menu.in_set(GameOverSystems).run_if(in_state(GameOverState::Init)),
 		);
-		app.add_systems(Update, menu.in_set(GameOverSet).run_if(in_state(GameOverState::Wait)));
+		app.add_systems(
+			Update,
+			menu.in_set(GameOverSystems).run_if(in_state(GameOverState::Wait)),
+		);
 	}
 }
 

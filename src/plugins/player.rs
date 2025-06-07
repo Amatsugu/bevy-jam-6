@@ -11,7 +11,7 @@ use crate::{
 		weapons::{ProjectileType, Weapon, WeaponFiring},
 	},
 	resources::utils::Fonts,
-	state_management::{GameStartSet, GameplaySet, GameplayState},
+	state_management::{GameStartSystems, GameplayState, GameplaySystems},
 };
 
 pub struct PlayerPlugin;
@@ -51,14 +51,14 @@ impl Plugin for PlayerPlugin {
 			},
 		});
 
-		app.add_systems(Update, spawn_player.in_set(GameStartSet));
+		app.add_systems(Update, spawn_player.in_set(GameStartSystems));
 		app.add_systems(
 			Update,
-			(player_movement, look_at_mouse, fire_projectile, change_projectile).in_set(GameplaySet),
+			(player_movement, look_at_mouse, fire_projectile, change_projectile).in_set(GameplaySystems),
 		);
-		app.add_systems(PostUpdate, gameover_transition.in_set(GameplaySet));
+		app.add_systems(PostUpdate, gameover_transition.in_set(GameplaySystems));
 		#[cfg(debug_assertions)]
-		app.add_systems(PostUpdate, infinite_health.in_set(GameplaySet));
+		app.add_systems(PostUpdate, infinite_health.in_set(GameplaySystems));
 	}
 }
 

@@ -17,19 +17,19 @@ pub enum GameOverState {
 }
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
-pub struct GameplaySet;
+pub struct GameplaySystems;
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
-pub struct GameStartSet;
+pub struct GameStartSystems;
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
-pub struct GameWaitingSet;
+pub struct GameWaitingSystems;
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
-pub struct GameCleanupSet;
+pub struct GameCleanupSystems;
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
-pub struct GameOverSet;
+pub struct GameOverSystems;
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
-pub struct ResetSet;
+pub struct ResetSystems;
