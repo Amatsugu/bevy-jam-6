@@ -462,19 +462,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bevy-jam-6"
-version = "0.1.0"
-dependencies = [
- "bevy",
- "bevy-inspector-egui",
- "bevy_rapier2d",
- "getrandom 0.3.3",
- "iyes_perf_ui",
- "rand 0.9.1",
- "rand_chacha 0.9.0",
-]
-
-[[package]]
 name = "bevy_a11y"
 version = "0.16.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1743,6 +1730,19 @@ dependencies = [
  "rustix 0.38.44",
  "wayland-backend",
  "wayland-client",
+]
+
+[[package]]
+name = "cataclyze"
+version = "0.2.0"
+dependencies = [
+ "bevy",
+ "bevy-inspector-egui",
+ "bevy_rapier2d",
+ "getrandom 0.3.3",
+ "iyes_perf_ui",
+ "rand 0.9.1",
+ "rand_chacha 0.9.0",
 ]
 
 [[package]]
