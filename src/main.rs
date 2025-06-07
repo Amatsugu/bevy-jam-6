@@ -15,7 +15,7 @@ use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_rapier2d::prelude::*;
 use plugins::GamePlugin;
 
-const NAME: &str = "Bevy Jam 6";
+const NAME: &str = "Cataclyze";
 
 const AUDIO_SCALE: f32 = 1. / 100.0;
 
