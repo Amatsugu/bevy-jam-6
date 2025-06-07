@@ -20,3 +20,6 @@ impl From<f32> for Lifetime {
 		Self(Timer::from_seconds(value, TimerMode::Once))
 	}
 }
+
+#[derive(Component, Reflect, Default)]
+pub struct Cleanable;

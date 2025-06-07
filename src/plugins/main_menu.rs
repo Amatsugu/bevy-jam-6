@@ -1,0 +1,57 @@
+use bevy::prelude::*;
+
+use crate::{
+	NAME,
+	components::tags::MainMenu,
+	resources::utils::Fonts,
+	state_management::{GameWaitingSet, GameplaySet, GameplayState, ResetSet},
+};
+
+pub struct MainMenuPlugin;
+
+impl Plugin for MainMenuPlugin {
+	fn build(&self, app: &mut App) {
+		app.add_systems(Update, spawn_menu.in_set(ResetSet));
+		app.add_systems(Update, menu.in_set(GameWaitingSet));
+		app.add_systems(PreUpdate, clean_menu.in_set(GameplaySet));
+	}
+}
+
+fn spawn_menu(mut commands: Commands, fonts: Res<Fonts>) {
+	commands.spawn((
+		MainMenu,
+		Transform::from_xyz(0.0, 50., 0.0),
+		Text2d::new(NAME.to_string()),
+		TextFont {
+			font: fonts.noto_thin.clone(),
+			font_size: 100.,
+			..default()
+		},
+		TextLayout::new_with_justify(JustifyText::Center),
+	));
+
+	commands.spawn((
+		MainMenu,
+		Transform::from_xyz(0.0, -30., 0.0),
+		Text2d::new("Press [SPACE] to Start"),
+		TextFont {
+			font: fonts.noto_thin.clone(),
+			font_size: 20.,
+			..default()
+		},
+		TextLayout::new_with_justify(JustifyText::Center),
+	));
+}
+
+fn clean_menu(query: Query<Entity, With<MainMenu>>, mut commands: Commands) {
+	for entity in query {
+		commands.entity(entity).despawn();
+	}
+}
+
+fn menu(key: Res<ButtonInput<KeyCode>>, mut next: ResMut<NextState<GameplayState>>) {
+	if key.just_pressed(KeyCode::Space) {
+		info!("Moving to Waiting");
+		next.set(GameplayState::Startup);
+	}
+}

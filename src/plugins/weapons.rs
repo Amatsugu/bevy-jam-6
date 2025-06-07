@@ -12,13 +12,14 @@ use crate::{
 	},
 	plugins::player::Player,
 	resources::utils::RandomGen,
+	state_management::GameplaySet,
 };
 
 pub struct WeaponsPlugin;
 
 impl Plugin for WeaponsPlugin {
 	fn build(&self, app: &mut App) {
-		app.add_systems(Update, weapon_firing);
+		app.add_systems(Update, weapon_firing.in_set(GameplaySet));
 	}
 }
 
@@ -104,6 +105,7 @@ impl ProjBatch {
 	pub fn spawn(self, commands: &mut Commands) {
 		match self {
 			ProjBatch::Normal(proj_bundles) => commands.spawn_batch(proj_bundles),
+			ProjBatch::Bounce(bounce_projs) => commands.spawn_batch(bounce_projs),
 			ProjBatch::Sensor(sensor_projs) => commands.spawn_batch(sensor_projs),
 			ProjBatch::Scatter(scatter_projs) => commands.spawn_batch(scatter_projs),
 		}
@@ -116,8 +118,12 @@ struct SensorProj(ProjBundle, Sensor);
 #[derive(Bundle)]
 struct ScatterProj(ProjBundle, DeathScatter);
 
+#[derive(Bundle)]
+struct BounceProj(ProjBundle, Restitution);
+
 enum ProjBatch {
 	Normal(Vec<ProjBundle>),
+	Bounce(Vec<BounceProj>),
 	Sensor(Vec<SensorProj>),
 	Scatter(Vec<ScatterProj>),
 }
@@ -232,21 +238,27 @@ fn create_projectile_batch(
 			let bundles = aim_pos
 				.iter()
 				.map(|(aim, pos)| {
-					fire_projectile(
-						*pos,
-						aim * speed * speed_multi,
-						damage * damage_multi,
-						PROJECTILE_LIFETIME,
-						PROJECTILE_SIZE,
-						PLAYER_PROJECTILE_GROUP,
-						ENEMY_OWNED_GROUP,
-						*bounce_limit,
-						DEFAULT_DRAG,
-						owner,
-					)
+					return BounceProj(
+						fire_projectile(
+							*pos,
+							aim * speed * speed_multi,
+							damage * damage_multi,
+							PROJECTILE_LIFETIME,
+							PROJECTILE_SIZE,
+							PLAYER_PROJECTILE_GROUP,
+							ENEMY_OWNED_GROUP,
+							*bounce_limit,
+							DEFAULT_DRAG,
+							owner,
+						),
+						Restitution {
+							coefficient: 1.0,
+							combine_rule: CoefficientCombineRule::Max,
+						},
+					);
 				})
 				.collect();
-			ProjBatch::Normal(bundles)
+			ProjBatch::Bounce(bundles)
 		}
 		ProjectileType::Grenade {
 			damage,

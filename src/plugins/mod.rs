@@ -9,4 +9,8 @@ mod spawner;
 mod types;
 mod utils;
 pub use game::*;
+mod game_over;
+mod health;
+mod main_menu;
+mod ui;
 mod weapons;

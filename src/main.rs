@@ -1,6 +1,7 @@
 mod components;
 mod plugins;
 mod resources;
+mod state_management;
 
 use bevy::asset::AssetMetaCheck;
 use bevy::prelude::*;

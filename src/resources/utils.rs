@@ -33,3 +33,11 @@ impl RandomGen {
 		return Vec2::new(angle.cos(), angle.sin());
 	}
 }
+
+#[derive(Resource, Reflect)]
+#[reflect(Resource)]
+pub struct Fonts {
+	pub noto: Handle<Font>,
+	pub noto_regular: Handle<Font>,
+	pub noto_thin: Handle<Font>,
+}

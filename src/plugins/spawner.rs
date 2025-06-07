@@ -1,6 +1,7 @@
 use crate::{
-	components::{spawner::SpawnBatch, stats::MaxHealth},
+	components::{spawner::SpawnBatch, stats::MaxHealth, utils::Cleanable},
 	resources::utils::RandomGen,
+	state_management::{GameStartSet, GameplaySet},
 };
 use bevy::{ecs::entity_disabling::Disabled, prelude::*};
 use bevy_rapier2d::prelude::*;
@@ -23,8 +24,9 @@ pub struct EnemySpawnerPlugin;
 
 impl Plugin for EnemySpawnerPlugin {
 	fn build(&self, app: &mut App) {
-		app.add_systems(Startup, (prepare_prefabs, create_spawners).chain());
-		app.add_systems(Update, (spawners_batching, spawners_spawning));
+		app.add_systems(Startup, prepare_prefabs);
+		app.add_systems(Update, create_spawners.in_set(GameStartSet));
+		app.add_systems(Update, (spawners_batching, spawners_spawning).in_set(GameplaySet));
 		#[cfg(debug_assertions)]
 		app.add_systems(Update, spawner_viz);
 	}
@@ -58,16 +60,19 @@ fn prepare_prefabs(
 			Mesh2d(meshes.add(Capsule2d::new(5.0, 10.0))),
 			MeshMaterial2d(materials.add(Color::linear_rgb(1.0, 1.0, 0.0))),
 			RigidBody::Dynamic,
-			Velocity::zero(),
+			Damping {
+				linear_damping: 1.,
+				..default()
+			},
 			MoveSpeedStat(30.),
 			Collider::ball(4.),
 			DeathScatter {
-				count: 50,
+				count: 20,
 				pattern: ScatterPattern::Spread {
 					arc: 30.,
 					targeting: Targeting::Forward,
 				},
-				damage: 30.,
+				damage: 20.,
 			},
 			Disabled,
 		))
@@ -85,7 +90,10 @@ fn prepare_prefabs(
 			Mesh2d(meshes.add(RegularPolygon::new(5., 6))),
 			MeshMaterial2d(materials.add(Color::linear_rgb(0.0, 1.0, 0.0))),
 			RigidBody::Dynamic,
-			Velocity::zero(),
+			Damping {
+				linear_damping: 1.,
+				..default()
+			},
 			MoveSpeedStat(50.),
 			Collider::ball(4.),
 			Disabled,
@@ -106,7 +114,10 @@ fn prepare_prefabs(
 			Mesh2d(meshes.add(Circle::new(5.))),
 			MeshMaterial2d(materials.add(Color::linear_rgb(0.0, 0.0, 1.0))),
 			RigidBody::Dynamic,
-			Velocity::zero(),
+			Damping {
+				linear_damping: 1.,
+				..default()
+			},
 			MoveSpeedStat(40.),
 			Collider::ball(4.),
 			Disabled,
@@ -114,7 +125,7 @@ fn prepare_prefabs(
 				count: 50,
 				pattern: ScatterPattern::Explosion {
 					range: 100.,
-					speed: 80.,
+					speed: 300.,
 				},
 				damage: 40.,
 			},
@@ -130,6 +141,7 @@ fn create_spawners(mut commands: Commands, prefabs: Res<Prefabs>) {
 
 		commands.spawn((
 			Transform::from_translation(dir),
+			Cleanable,
 			Spawner {
 				max_batch_size: 8,
 				min_batch_size: 2,

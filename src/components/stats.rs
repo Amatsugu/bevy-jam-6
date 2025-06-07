@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_rapier2d::prelude::*;
 
 #[derive(Component, Default, Reflect)]
 pub struct Damage(pub f32);
@@ -10,6 +11,7 @@ impl From<f32> for Damage {
 }
 
 #[derive(Component, Default, Reflect)]
+#[require(RigidBody, Velocity, ExternalForce, Damping)]
 pub struct MoveSpeed(pub f32);
 
 #[derive(Component, Default, Reflect)]

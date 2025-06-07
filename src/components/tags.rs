@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+use crate::components::utils::Cleanable;
+
 use super::stats::{Health, MaxHealth};
 
 #[derive(Component, Default)]
@@ -22,7 +24,7 @@ impl Default for ContactLimit {
 }
 
 #[derive(Component, Reflect, Default)]
-#[require(ContactLimit)]
+#[require(ContactLimit, Cleanable)]
 pub struct Projectile(pub Owner);
 
 impl Projectile {
@@ -48,3 +50,6 @@ pub enum Owner {
 	Player,
 	Enemy,
 }
+
+#[derive(Component)]
+pub struct MainMenu;

@@ -3,9 +3,12 @@ use std::f32::consts::FRAC_PI_3;
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
-use crate::components::{
-	ai::{AI, AITarget, ChargeAI, ChargeInfo, ChargeState, ChaseAI, HoverAI},
-	stats::{Health, Life, MoveSpeed, MoveSpeedMultiplier},
+use crate::{
+	components::{
+		ai::{AI, AITarget, ChargeAI, ChargeInfo, ChargeState, ChaseAI, HoverAI},
+		stats::{Health, Life, MoveSpeed, MoveSpeedMultiplier},
+	},
+	state_management::{GameOverSet, GameplaySet},
 };
 
 use super::player::Player;
@@ -16,10 +19,18 @@ impl Plugin for EnemiesPlugin {
 	fn build(&self, app: &mut App) {
 		app.add_systems(
 			PreUpdate,
-			(set_ai_chase_target, set_ai_hover_target, set_ai_charge_target),
+			(set_ai_chase_target, set_ai_hover_target, set_ai_charge_target).in_set(GameplaySet),
 		);
-		app.add_systems(Update, move_ai);
-		app.add_systems(PostUpdate, (process_life, ai_charge_collision, ai_chase_collision));
+		app.add_systems(Update, move_ai.in_set(GameplaySet));
+		app.add_systems(
+			PostUpdate,
+			(process_life, ai_charge_collision, ai_chase_collision).in_set(GameplaySet),
+		);
+
+		app.add_systems(
+			PostUpdate,
+			(process_life, ai_charge_collision, ai_chase_collision).in_set(GameOverSet),
+		);
 
 		//Debugging
 		#[cfg(feature = "ai")]
@@ -28,16 +39,16 @@ impl Plugin for EnemiesPlugin {
 	}
 }
 
-fn move_ai(query: Query<(&mut Transform, &mut Velocity, &MoveSpeed, &AI, &AITarget, &Life)>) {
-	for (mut transform, mut vel, speed, ai, tgt, life) in query {
+fn move_ai(query: Query<(&mut ExternalForce, &mut Transform, &MoveSpeed, &AI, &AITarget, &Life)>) {
+	for (mut force, mut transform, speed, ai, tgt, life) in query {
 		if ai.is_disabled() || life.is_dead() {
 			continue;
 		}
 		let move_dir = (tgt.move_to - transform.translation.xy()).normalize_or_zero();
 		if move_dir.length_squared() > f32::EPSILON {
-			vel.linvel = move_dir * speed.0;
+			force.force = move_dir * speed.0 * 100.;
 		} else {
-			vel.linvel = Vec2::ZERO;
+			force.force = Vec2::ZERO;
 		}
 
 		let look_dir = (tgt.look_at - transform.translation.xy()).normalize_or_zero();

@@ -1,9 +1,12 @@
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
-use crate::components::{
-	stats::{Damage, Health, Life},
-	tags::{ContactLimit, Owner, Projectile},
+use crate::{
+	components::{
+		stats::{Damage, Health, Life},
+		tags::{ContactLimit, Owner, Projectile},
+	},
+	state_management::{GameOverSet, GameplaySet},
 };
 
 pub struct ProjectilesPlugin;
@@ -12,8 +15,10 @@ impl Plugin for ProjectilesPlugin {
 	fn build(&self, app: &mut App) {
 		app.register_type::<Projectiles>();
 		app.add_systems(Startup, init_meshes);
-		app.add_systems(Update, handle_projectiles);
-		app.add_systems(PostUpdate, init_projectiles);
+		app.add_systems(Update, handle_projectile_collisions.in_set(GameplaySet));
+		app.add_systems(Update, handle_projectile_collisions.in_set(GameOverSet));
+		app.add_systems(PostUpdate, init_projectiles.in_set(GameplaySet));
+		app.add_systems(PostUpdate, init_projectiles.in_set(GameOverSet));
 	}
 }
 #[derive(Resource, Reflect, Default)]
@@ -45,7 +50,7 @@ fn init_projectiles(
 	}
 }
 
-fn handle_projectiles(
+fn handle_projectile_collisions(
 	mut projectiles: Query<(Entity, &Damage, &mut ContactLimit), With<Projectile>>,
 	mut targets: Query<(&mut Health, &mut Life)>,
 	mut collision_events: EventReader<CollisionEvent>,

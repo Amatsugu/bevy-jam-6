@@ -4,8 +4,9 @@ use bevy::{
 		tonemapping::{DebandDither, Tonemapping},
 	},
 	prelude::*,
+	window::PrimaryWindow,
 };
-use bevy_rapier2d::plugin::RapierConfiguration;
+use bevy_rapier2d::{plugin::RapierConfiguration, prelude::Collider};
 #[cfg(debug_assertions)]
 use iyes_perf_ui::{
 	PerfUiPlugin,
@@ -15,9 +16,15 @@ use rand::SeedableRng;
 use rand_chacha::ChaChaRng;
 
 use crate::{
-	components::tags::MainCamera,
-	plugins::{effects::EffectsPlugin, spawner::EnemySpawnerPlugin, types::TypesPlugin, weapons::WeaponsPlugin},
-	resources::utils::RandomGen,
+	components::{tags::MainCamera, utils::Cleanable},
+	plugins::{
+		effects::EffectsPlugin, game_over::GameOverPlugin, health::HealthPlugin, main_menu::MainMenuPlugin,
+		spawner::EnemySpawnerPlugin, types::TypesPlugin, ui::UIPlugin, weapons::WeaponsPlugin,
+	},
+	resources::utils::{Fonts, RandomGen},
+	state_management::{
+		GameCleanupSet, GameOverSet, GameStartSet, GameWaitingSet, GameplaySet, GameplayState, ResetSet,
+	},
 };
 
 use super::{
@@ -25,12 +32,12 @@ use super::{
 	projectiles::ProjectilesPlugin, utils::UtilsPlugin,
 };
 
-#[derive(Default)]
-
 pub struct GamePlugin;
 
 impl Plugin for GamePlugin {
 	fn build(&self, app: &mut App) {
+		app.insert_state(GameplayState::Reset);
+
 		app.add_plugins((
 			PlayerPlugin,
 			EnemiesPlugin,
@@ -39,11 +46,18 @@ impl Plugin for GamePlugin {
 			UtilsPlugin,
 			TypesPlugin,
 			ProjectilesPlugin,
+			HealthPlugin,
 			DeathPlugin,
 			EffectsPlugin,
 			WeaponsPlugin,
+			MainMenuPlugin,
+			GameOverPlugin,
+			UIPlugin,
 		));
-		app.add_systems(Startup, (setup, disable_gravity));
+		app.add_systems(PreStartup, (setup, disable_gravity, spwan_bounds));
+		app.add_systems(Last, cleanup.in_set(GameCleanupSet));
+		app.add_systems(Last, reset_transition.in_set(ResetSet));
+		app.add_systems(Last, start_transition.in_set(GameStartSet));
 
 		app.insert_resource(RandomGen(ChaChaRng::seed_from_u64(0)));
 
@@ -55,10 +69,59 @@ impl Plugin for GamePlugin {
 				.add_plugins(bevy::render::diagnostic::RenderDiagnosticsPlugin)
 				.add_plugins(PerfUiPlugin);
 		}
+
+		setup_sets(app);
 	}
 }
 
-fn setup(mut commands: Commands) {
+fn setup_sets(app: &mut App) {
+	app.configure_sets(PreUpdate, ResetSet.run_if(in_state(GameplayState::Reset)));
+	app.configure_sets(Update, ResetSet.run_if(in_state(GameplayState::Reset)));
+	app.configure_sets(PostUpdate, ResetSet.run_if(in_state(GameplayState::Reset)));
+	app.configure_sets(Last, ResetSet.run_if(in_state(GameplayState::Reset)));
+
+	app.configure_sets(PreUpdate, GameWaitingSet.run_if(in_state(GameplayState::Waiting)));
+	app.configure_sets(Update, GameWaitingSet.run_if(in_state(GameplayState::Waiting)));
+	app.configure_sets(PostUpdate, GameWaitingSet.run_if(in_state(GameplayState::Waiting)));
+
+	app.configure_sets(PostUpdate, GameStartSet.run_if(in_state(GameplayState::Startup)));
+	app.configure_sets(Update, GameStartSet.run_if(in_state(GameplayState::Startup)));
+	app.configure_sets(PreUpdate, GameStartSet.run_if(in_state(GameplayState::Startup)));
+	app.configure_sets(Last, GameStartSet.run_if(in_state(GameplayState::Startup)));
+
+	app.configure_sets(PreUpdate, GameplaySet.run_if(in_state(GameplayState::Playing)));
+	app.configure_sets(Update, GameplaySet.run_if(in_state(GameplayState::Playing)));
+	app.configure_sets(PostUpdate, GameplaySet.run_if(in_state(GameplayState::Playing)));
+
+	app.configure_sets(PreUpdate, GameOverSet.run_if(in_state(GameplayState::GameOver)));
+	app.configure_sets(Update, GameOverSet.run_if(in_state(GameplayState::GameOver)));
+	app.configure_sets(PostUpdate, GameOverSet.run_if(in_state(GameplayState::GameOver)));
+
+	app.configure_sets(PreUpdate, GameCleanupSet.run_if(in_state(GameplayState::Cleanup)));
+	app.configure_sets(Update, GameCleanupSet.run_if(in_state(GameplayState::Cleanup)));
+	app.configure_sets(PostUpdate, GameCleanupSet.run_if(in_state(GameplayState::Cleanup)));
+	app.configure_sets(Last, GameCleanupSet.run_if(in_state(GameplayState::Cleanup)));
+}
+
+fn reset_transition(mut next: ResMut<NextState<GameplayState>>) {
+	next.set(GameplayState::Waiting);
+	info!("Moving to Waiting");
+}
+
+fn cleanup(query: Query<Entity, With<Cleanable>>, mut commands: Commands, mut next: ResMut<NextState<GameplayState>>) {
+	for entity in query {
+		commands.entity(entity).despawn();
+	}
+	next.set(GameplayState::Reset);
+	info!("Moving to Reset");
+}
+
+fn start_transition(mut next: ResMut<NextState<GameplayState>>) {
+	next.set(GameplayState::Playing);
+	info!("Moving to Playing");
+}
+
+fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
 	commands.spawn((
 		Camera2d,
 		MainCamera,
@@ -73,8 +136,38 @@ fn setup(mut commands: Commands) {
 		PerfUiEntryRenderGpuTime::default(),
 		PerfUiEntryFrameTimeWorst::default(),
 	));
+
+	commands.insert_resource(Fonts {
+		noto: asset_server.load("fonts/NotoSans-VariableFont_wdth,wght.ttf"),
+		noto_regular: asset_server.load("fonts/NotoSans-Regular.ttf"),
+		noto_thin: asset_server.load("fonts/NotoSans-Thin.ttf"),
+	});
 }
 
 fn disable_gravity(mut cfg: Single<&mut RapierConfiguration>) {
 	cfg.gravity = Vec2::ZERO;
+}
+
+fn spwan_bounds(mut commands: Commands, window: Single<&Window, With<PrimaryWindow>>) {
+	let size = window.size();
+	//Left
+	commands.spawn((
+		Transform::from_xyz(-size.x / 2., 0.0, 0.0),
+		Collider::cuboid(1., size.y / 2.),
+	));
+	//Right
+	commands.spawn((
+		Transform::from_xyz(size.x / 2., 0.0, 0.0),
+		Collider::cuboid(1., size.y / 2.),
+	));
+	//Top
+	commands.spawn((
+		Transform::from_xyz(0.0, size.y / 2., 0.0),
+		Collider::cuboid(size.x / 2., 1.),
+	));
+	//Bottom
+	commands.spawn((
+		Transform::from_xyz(0.0, size.y / -2., 0.0),
+		Collider::cuboid(size.x / 2., 1.),
+	));
 }

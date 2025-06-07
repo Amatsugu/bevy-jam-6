@@ -13,6 +13,7 @@ use crate::{
 		utils::Lifetime,
 	},
 	resources::utils::RandomGen,
+	state_management::{GameOverSet, GameplaySet},
 };
 
 use super::player::Player;
@@ -22,7 +23,8 @@ pub struct DeathPlugin;
 impl Plugin for DeathPlugin {
 	fn build(&self, app: &mut App) {
 		app.add_systems(Startup, init_meshes);
-		app.add_systems(Update, (death_scatter, sprial_spawner));
+		app.add_systems(Update, (death_scatter, sprial_spawner).in_set(GameplaySet));
+		app.add_systems(Update, (death_scatter, sprial_spawner).in_set(GameOverSet));
 	}
 }
 

@@ -4,5 +4,6 @@ pub mod effects;
 pub mod spawner;
 pub mod stats;
 pub mod tags;
+pub mod ui;
 pub mod utils;
 pub mod weapons;

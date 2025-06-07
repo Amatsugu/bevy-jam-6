@@ -1,17 +1,27 @@
 use bevy::prelude::*;
 
-use crate::components::{
-	stats::{Life, MoveSpeed, MoveSpeedMultiplier, MoveSpeedStat},
-	utils::Lifetime,
+use crate::{
+	components::{
+		stats::{Life, MoveSpeed, MoveSpeedMultiplier, MoveSpeedStat},
+		utils::Lifetime,
+	},
+	state_management::{GameOverSet, GameplaySet},
 };
 
 pub struct UtilsPlugin;
 
 impl Plugin for UtilsPlugin {
 	fn build(&self, app: &mut App) {
-		// app.add_systems(Startup, register_lifetime_hook);
-		app.add_systems(PostUpdate, (process_lifetimes, process_lifetimes_life));
-		app.add_systems(PreUpdate, process_move_speed);
+		app.add_systems(
+			PostUpdate,
+			(process_lifetimes, process_lifetimes_life).in_set(GameOverSet),
+		);
+		app.add_systems(
+			PostUpdate,
+			(process_lifetimes, process_lifetimes_life).in_set(GameplaySet),
+		);
+		app.add_systems(PreUpdate, process_move_speed.in_set(GameplaySet));
+		app.add_systems(PreUpdate, process_move_speed.in_set(GameOverSet));
 	}
 }
 fn process_lifetimes(

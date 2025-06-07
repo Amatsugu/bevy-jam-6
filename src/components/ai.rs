@@ -1,9 +1,11 @@
 use bevy::prelude::*;
 
+use crate::components::utils::Cleanable;
+
 use super::stats::{Health, MoveSpeedMultiplier, MoveSpeedStat};
 
 #[derive(Component, Reflect)]
-#[require(Transform, MoveSpeedStat, MoveSpeedMultiplier, Health, AITarget)]
+#[require(Transform, MoveSpeedStat, MoveSpeedMultiplier, Health, AITarget, Cleanable)]
 pub struct AI {
 	pub enabled: bool,
 }
