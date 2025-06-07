@@ -2,7 +2,8 @@ use bevy::prelude::*;
 
 use crate::{
 	components::utils::Cleanable,
-	resources::utils::Fonts,
+	plugins::utils::play_audio_onshot,
+	resources::{audio::AudioClips, utils::Fonts},
 	state_management::{GameOverSet, GameOverState, GameplayState},
 };
 
@@ -19,7 +20,12 @@ impl Plugin for GameOverPlugin {
 	}
 }
 
-fn spawn_menu(mut commands: Commands, mut next: ResMut<NextState<GameOverState>>, fonts: Res<Fonts>) {
+fn spawn_menu(
+	mut commands: Commands,
+	mut next: ResMut<NextState<GameOverState>>,
+	fonts: Res<Fonts>,
+	audio: Res<AudioClips>,
+) {
 	commands.spawn((
 		Cleanable,
 		Transform::from_xyz(0.0, 50., 0.0),
@@ -44,6 +50,7 @@ fn spawn_menu(mut commands: Commands, mut next: ResMut<NextState<GameOverState>>
 		TextLayout::new_with_justify(JustifyText::Center),
 	));
 	next.set(GameOverState::Wait);
+	play_audio_onshot(&mut commands, audio.gameover.clone());
 }
 
 fn menu(

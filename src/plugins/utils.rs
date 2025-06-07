@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use crate::{
 	components::{
 		stats::{Life, MoveSpeed, MoveSpeedMultiplier, MoveSpeedStat},
-		utils::Lifetime,
+		utils::{Cleanable, Lifetime},
 	},
 	state_management::{GameOverSet, GameplaySet},
 };
@@ -55,4 +55,18 @@ fn process_move_speed(mut query: Query<(&mut MoveSpeed, &MoveSpeedStat, &MoveSpe
 	for (mut adj, speed, multi) in &mut query {
 		adj.0 = speed.0 * multi.0;
 	}
+}
+
+pub fn play_audio_onshot(commands: &mut Commands, audio: Handle<AudioSource>) {
+	commands.spawn((AudioPlayer::new(audio), PlaybackSettings::DESPAWN, Cleanable));
+}
+
+#[allow(dead_code)]
+pub fn play_audio_onshot_spacial(commands: &mut Commands, pos: Vec3, audio: Handle<AudioSource>) {
+	commands.spawn((
+		Transform::from_translation(pos),
+		AudioPlayer::new(audio),
+		PlaybackSettings::DESPAWN.with_spatial(true),
+		Cleanable,
+	));
 }

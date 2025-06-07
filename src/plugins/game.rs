@@ -6,7 +6,10 @@ use bevy::{
 	prelude::*,
 	window::PrimaryWindow,
 };
-use bevy_rapier2d::{plugin::RapierConfiguration, prelude::Collider};
+use bevy_rapier2d::{
+	plugin::RapierConfiguration,
+	prelude::{Collider, Restitution},
+};
 #[cfg(debug_assertions)]
 use iyes_perf_ui::{
 	PerfUiPlugin,
@@ -21,7 +24,10 @@ use crate::{
 		effects::EffectsPlugin, game_over::GameOverPlugin, health::HealthPlugin, main_menu::MainMenuPlugin,
 		spawner::EnemySpawnerPlugin, types::TypesPlugin, ui::UIPlugin, weapons::WeaponsPlugin,
 	},
-	resources::utils::{Fonts, RandomGen},
+	resources::{
+		audio::AudioClips,
+		utils::{Fonts, RandomGen},
+	},
 	state_management::{
 		GameCleanupSet, GameOverSet, GameStartSet, GameWaitingSet, GameplaySet, GameplayState, ResetSet,
 	},
@@ -54,7 +60,8 @@ impl Plugin for GamePlugin {
 			GameOverPlugin,
 			UIPlugin,
 		));
-		app.add_systems(PreStartup, (setup, disable_gravity, spwan_bounds));
+		app.add_systems(PreStartup, (setup, spwan_bounds, load_auido));
+		app.add_systems(PostStartup, disable_gravity);
 		app.add_systems(Last, cleanup.in_set(GameCleanupSet));
 		app.add_systems(Last, reset_transition.in_set(ResetSet));
 		app.add_systems(Last, start_transition.in_set(GameStartSet));
@@ -154,20 +161,37 @@ fn spwan_bounds(mut commands: Commands, window: Single<&Window, With<PrimaryWind
 	commands.spawn((
 		Transform::from_xyz(-size.x / 2., 0.0, 0.0),
 		Collider::cuboid(1., size.y / 2.),
+		Restitution::coefficient(0.5),
 	));
 	//Right
 	commands.spawn((
 		Transform::from_xyz(size.x / 2., 0.0, 0.0),
 		Collider::cuboid(1., size.y / 2.),
+		Restitution::coefficient(0.5),
 	));
 	//Top
 	commands.spawn((
 		Transform::from_xyz(0.0, size.y / 2., 0.0),
 		Collider::cuboid(size.x / 2., 1.),
+		Restitution::coefficient(0.5),
 	));
 	//Bottom
 	commands.spawn((
 		Transform::from_xyz(0.0, size.y / -2., 0.0),
 		Collider::cuboid(size.x / 2., 1.),
+		Restitution::coefficient(0.5),
 	));
+}
+
+fn load_auido(mut commands: Commands, asset_server: Res<AssetServer>) {
+	commands.insert_resource(AudioClips {
+		start: asset_server.load("sounds/start.wav"),
+		explosion: asset_server.load("sounds/explosion.wav"),
+		hit: asset_server.load("sounds/hit.wav"),
+		hurt: asset_server.load("sounds/hurt.wav"),
+		shoot_auto: asset_server.load("sounds/shoot_auto.wav"),
+		shoot_spread: asset_server.load("sounds/shoot_spread.wav"),
+		shoot_burst: asset_server.load("sounds/shoot_burst.wav"),
+		gameover: asset_server.load("sounds/gameover.wav"),
+	});
 }

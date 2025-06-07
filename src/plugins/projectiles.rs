@@ -6,6 +6,8 @@ use crate::{
 		stats::{Damage, Health, Life},
 		tags::{ContactLimit, Owner, Projectile},
 	},
+	plugins::{player::Player, utils::play_audio_onshot},
+	resources::audio::AudioClips,
 	state_management::{GameOverSet, GameplaySet},
 };
 
@@ -51,20 +53,23 @@ fn init_projectiles(
 }
 
 fn handle_projectile_collisions(
-	mut projectiles: Query<(Entity, &Damage, &mut ContactLimit), With<Projectile>>,
-	mut targets: Query<(&mut Health, &mut Life)>,
+	mut projectiles: Query<(Entity, &Damage, &mut ContactLimit, &Projectile)>,
+	mut targets: Query<(&mut Health, &mut Life, Option<&Player>)>,
 	mut collision_events: EventReader<CollisionEvent>,
 	mut commands: Commands,
+	audio: Res<AudioClips>,
 ) {
 	for event in collision_events.read() {
 		if let CollisionEvent::Started(entity_a, entity_b, _) = event {
-			if let Ok((e, damage, mut contacts)) = projectiles.get_mut(*entity_a) {
-				if let Ok((mut health, mut life)) = targets.get_mut(*entity_b) {
+			if let Ok((e, damage, mut contacts, proj)) = projectiles.get_mut(*entity_a) {
+				if let Ok((mut health, mut life, player)) = targets.get_mut(*entity_b) {
+					play_sounds(&audio, &mut commands, player.is_some(), proj.0);
 					apply_damage(&mut health, &mut life, damage);
 				}
 				process_contacts(&mut contacts, e, &mut commands);
-			} else if let Ok((e, damage, mut contacts)) = projectiles.get_mut(*entity_b) {
-				if let Ok((mut health, mut life)) = targets.get_mut(*entity_a) {
+			} else if let Ok((e, damage, mut contacts, proj)) = projectiles.get_mut(*entity_b) {
+				if let Ok((mut health, mut life, player)) = targets.get_mut(*entity_a) {
+					play_sounds(&audio, &mut commands, player.is_some(), proj.0);
 					apply_damage(&mut health, &mut life, damage);
 				}
 				process_contacts(&mut contacts, e, &mut commands);
@@ -72,6 +77,20 @@ fn handle_projectile_collisions(
 		}
 	}
 }
+pub fn play_sounds(audio: &AudioClips, commands: &mut Commands, is_player: bool, owner: Owner) {
+	if let Owner::Enemy = owner {
+		if !is_player {
+			return;
+		}
+	}
+	let clip = if is_player {
+		audio.hurt.clone()
+	} else {
+		audio.hit.clone()
+	};
+	play_audio_onshot(commands, clip);
+}
+
 pub fn process_contacts(contacts: &mut ContactLimit, entity: Entity, commands: &mut Commands) {
 	if contacts.0 > 0 {
 		contacts.0 -= 1;

@@ -3,7 +3,8 @@ use bevy::prelude::*;
 use crate::{
 	NAME,
 	components::tags::MainMenu,
-	resources::utils::Fonts,
+	plugins::utils::play_audio_onshot,
+	resources::{audio::AudioClips, utils::Fonts},
 	state_management::{GameWaitingSet, GameplaySet, GameplayState, ResetSet},
 };
 
@@ -49,9 +50,15 @@ fn clean_menu(query: Query<Entity, With<MainMenu>>, mut commands: Commands) {
 	}
 }
 
-fn menu(key: Res<ButtonInput<KeyCode>>, mut next: ResMut<NextState<GameplayState>>) {
+fn menu(
+	key: Res<ButtonInput<KeyCode>>,
+	mut next: ResMut<NextState<GameplayState>>,
+	mut commands: Commands,
+	audio: Res<AudioClips>,
+) {
 	if key.just_pressed(KeyCode::Space) {
 		info!("Moving to Waiting");
 		next.set(GameplayState::Startup);
+		play_audio_onshot(&mut commands, audio.start.clone());
 	}
 }

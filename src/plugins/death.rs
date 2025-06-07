@@ -12,7 +12,8 @@ use crate::{
 		tags::Projectile,
 		utils::Lifetime,
 	},
-	resources::utils::RandomGen,
+	plugins::utils::play_audio_onshot,
+	resources::{audio::AudioClips, utils::RandomGen},
 	state_management::{GameOverSet, GameplaySet},
 };
 
@@ -47,6 +48,7 @@ fn death_scatter(
 	mut commands: Commands,
 	mesh_data: Res<Projectiles>,
 	mut rng: ResMut<RandomGen>,
+	audio: Res<AudioClips>,
 ) {
 	for (transform, scatter, life, entity) in query {
 		if life.is_alive() {
@@ -66,6 +68,7 @@ fn death_scatter(
 					CollisionGroups::new(ENEMY_PROJECTILE_GROUP, Group::ALL),
 					Collider::ball(1.),
 				));
+				play_audio_onshot(&mut commands, audio.explosion.clone());
 				commands.entity(entity).despawn();
 			}
 			ScatterPattern::Spread { arc, targeting } => {
