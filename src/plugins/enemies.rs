@@ -36,7 +36,6 @@ impl Plugin for EnemiesPlugin {
 
 		//Debugging
 		#[cfg(feature = "ai")]
-		#[cfg(debug_assertions)]
 		app.add_systems(Update, (debug_ai, debug_hover_ai, debug_charge_ai));
 	}
 }
@@ -61,7 +60,6 @@ fn move_ai(query: Query<(&mut ExternalForce, &mut Transform, &MoveSpeed, &AI, &A
 }
 
 #[cfg(feature = "ai")]
-#[cfg(debug_assertions)]
 fn debug_ai(query: Query<(&Transform, &AITarget)>, mut gizmos: Gizmos) {
 	for (transform, tgt) in query {
 		gizmos.arrow_2d(transform.translation.xy(), tgt.move_to, Color::WHITE.with_alpha(0.2));
@@ -70,7 +68,6 @@ fn debug_ai(query: Query<(&Transform, &AITarget)>, mut gizmos: Gizmos) {
 }
 
 #[cfg(feature = "ai")]
-#[cfg(debug_assertions)]
 fn debug_hover_ai(query: Query<&HoverAI>, mut gizmos: Gizmos, player: Single<&Transform, With<Player>>) {
 	for hover in query {
 		gizmos.circle_2d(
@@ -87,7 +84,6 @@ fn debug_hover_ai(query: Query<&HoverAI>, mut gizmos: Gizmos, player: Single<&Tr
 }
 
 #[cfg(feature = "ai")]
-#[cfg(debug_assertions)]
 fn debug_charge_ai(
 	query: Query<(&ChargeAI, &ChargeInfo, &Transform)>,
 	mut gizmos: Gizmos,

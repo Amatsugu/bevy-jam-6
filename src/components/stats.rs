@@ -60,6 +60,10 @@ impl Life {
 #[require(Health)]
 pub struct MaxHealth(pub f32);
 
+#[derive(Component, Reflect)]
+#[require(Health, MaxHealth)]
+pub struct HealthRegen(pub f32);
+
 impl Default for MaxHealth {
 	fn default() -> Self {
 		return MaxHealth(100.);

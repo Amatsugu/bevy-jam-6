@@ -10,7 +10,7 @@ use bevy_rapier2d::{
 	plugin::RapierConfiguration,
 	prelude::{Collider, Restitution},
 };
-#[cfg(debug_assertions)]
+#[cfg(feature = "inspect")]
 use iyes_perf_ui::{
 	PerfUiPlugin,
 	prelude::{PerfUiEntryFPS, PerfUiEntryFrameTimeWorst, PerfUiEntryRenderGpuTime},
@@ -69,7 +69,7 @@ impl Plugin for GamePlugin {
 
 		app.insert_resource(RandomGen(ChaChaRng::seed_from_u64(0)));
 
-		#[cfg(debug_assertions)]
+		#[cfg(feature = "inspect")]
 		{
 			app.add_plugins(bevy::diagnostic::FrameTimeDiagnosticsPlugin::default())
 				// .add_plugins(bevy::diagnostic::EntityCountDiagnosticsPlugin)
@@ -138,7 +138,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
 		Bloom::default(),
 		DebandDither::Enabled,
 	));
-	#[cfg(debug_assertions)]
+	#[cfg(feature = "inspect")]
 	commands.spawn((
 		PerfUiEntryFPS::default(),
 		PerfUiEntryRenderGpuTime::default(),

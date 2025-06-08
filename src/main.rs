@@ -38,7 +38,6 @@ fn main() {
 					primary_window: Some(Window {
 						title: NAME.into(),
 						name: Some(NAME.into()),
-						#[cfg(debug_assertions)]
 						resolution: (1920., 1080.).into(),
 						#[cfg(debug_assertions)]
 						present_mode: PresentMode::AutoNoVsync,
