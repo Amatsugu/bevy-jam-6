@@ -57,7 +57,6 @@ fn spawn_ui(mut commands: Commands, window: Single<&Window, With<PrimaryWindow>>
 			..default()
 		},
 		TextLayout::new_with_justify(JustifyText::Center),
-		KillCountUI,
 		Cleanable,
 		children![(
 			Transform::from_xyz(0.0, 20., 0.0),
@@ -91,9 +90,9 @@ fn update_health_text(texts: Query<(&mut Text2d, &HealthBarText)>, healths: Quer
 			match health_text.display {
 				HealthTextDisplayMode::Raw => {
 					if health_text.show_max {
-						text.0 = format!("{}/{}", health.0, max.0);
+						text.0 = format!("{}/{}", health.0.round(), max.0.round());
 					} else {
-						text.0 = format!("{}", health.0);
+						text.0 = format!("{}", health.0.round());
 					}
 				}
 				HealthTextDisplayMode::Percentage => {

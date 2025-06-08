@@ -36,19 +36,14 @@ impl Plugin for DeathPlugin {
 				.in_set(GameplaySystems),
 		);
 		app.add_systems(PostUpdate, (death_scatter, sprial_spawner).in_set(GameOverSystems));
-		app.add_systems(Update, kill_count.in_set(GameplaySystems));
 	}
 }
 
-fn kill_count(mut events: EventReader<DeathEvent>, mut kill_count: ResMut<KillCount>) {
-	for event in events.read() {
-		if !event.is_player {
-			kill_count.0 += 1;
-		}
-	}
-}
-
-fn death_events(query: Query<(&mut Life, &Transform, Option<&Player>)>, mut events: EventWriter<DeathEvent>) {
+fn death_events(
+	query: Query<(&mut Life, &Transform, Option<&Player>)>,
+	mut events: EventWriter<DeathEvent>,
+	mut kill_count: ResMut<KillCount>,
+) {
 	for (mut life, transform, player) in query {
 		if life.is_alive() || life.1 {
 			continue;
@@ -58,6 +53,9 @@ fn death_events(query: Query<(&mut Life, &Transform, Option<&Player>)>, mut even
 			pos: transform.translation.xy(),
 			is_player: player.is_some(),
 		});
+		if player.is_none() {
+			kill_count.0 += 1;
+		}
 	}
 }
 

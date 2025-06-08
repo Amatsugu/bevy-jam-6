@@ -189,8 +189,9 @@ fn spawners_batching(query: Query<(&mut Spawner, &mut SpawnBatch)>, time: Res<Ti
 		spawner.spawn_rate.tick(time.delta());
 		if spawner.spawn_rate.finished() {
 			batch.0 = rng.range(spawner.min_batch_size..spawner.max_batch_size);
-			spawner.min_batch_size += 1;
-			spawner.max_batch_size += batch.0;
+			if rng.range(0..100) <= 25 {
+				spawner.max_batch_size += 1;
+			}
 		}
 	}
 }

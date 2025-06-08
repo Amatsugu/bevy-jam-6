@@ -198,5 +198,8 @@ fn load_auido(mut commands: Commands, asset_server: Res<AssetServer>) {
 		shoot_spread: asset_server.load("sounds/shoot_spread.wav"),
 		shoot_burst: asset_server.load("sounds/shoot_burst.wav"),
 		gameover: asset_server.load("sounds/gameover.wav"),
+		pickup: asset_server.load("sounds/powerUp.wav"),
+		heal: asset_server.load("sounds/heal.wav"),
+		weapon_switch: asset_server.load("sounds/weapon_switch.wav"),
 	});
 }

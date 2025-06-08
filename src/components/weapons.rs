@@ -14,6 +14,7 @@ pub enum Weapon {
 pub struct WeaponFiring(pub bool);
 
 impl WeaponFiring {
+	#[allow(dead_code)]
 	pub fn is_not_firing(&self) -> bool {
 		!self.0
 	}
@@ -35,7 +36,7 @@ impl Default for WeaponAuto {
 			damage_multi: 0.7,
 			speed_multi: 1.,
 			fire_rate: Timer::from_seconds(1. / 5., TimerMode::Repeating),
-			accuracy: 5.,
+			accuracy: 10.,
 			recoil: 10.,
 		}
 	}
@@ -67,7 +68,7 @@ impl Default for WeaponSpread {
 			shot_count: 3,
 			accuracy: 2.,
 			arc: 40.,
-			fire_rate: Timer::from_seconds(0.5, TimerMode::Repeating),
+			fire_rate: Timer::from_seconds(1.5, TimerMode::Repeating),
 			recoil: 40.,
 		}
 	}
@@ -97,13 +98,13 @@ impl Default for WeaponBurst {
 	fn default() -> Self {
 		Self {
 			damage_multi: 0.5,
-			speed_multi: 1.5,
+			speed_multi: 0.7,
 			fire_rate: Timer::from_seconds(1., TimerMode::Repeating),
 			accuracy: 3.,
 			burst: 3,
-			burst_rate: Timer::from_seconds(1. / 10., TimerMode::Repeating),
+			burst_rate: Timer::from_seconds(1. / 20., TimerMode::Repeating),
 			cur_burst: 0,
-			recoil: 20.,
+			recoil: 10.,
 		}
 	}
 }

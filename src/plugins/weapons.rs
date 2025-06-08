@@ -43,25 +43,30 @@ fn weapon_firing(
 	audio: Res<AudioClips>,
 ) {
 	for (transform, mut vel, firing, life, weapon, mut _beam, mut auto, mut burst, mut spread, proj, player) in query {
-		if life.is_dead() || firing.is_not_firing() {
+		if life.is_dead() {
 			continue;
 		}
 		let owner = if player.is_some() { Owner::Player } else { Owner::Enemy };
 		let aim = transform.up().as_vec3();
 		match weapon {
 			Weapon::Auto => {
-				auto.fire_rate.tick(time.delta());
-				if auto.fire_rate.finished() {
+				if !auto.fire_rate.finished() {
+					auto.fire_rate.tick(time.delta());
+				}
+				if firing.0 && auto.fire_rate.finished() {
 					vel.linvel += transform.up().xy() * -auto.recoil;
 					play_audio_onshot(&mut commands, audio.shoot_auto.clone());
 					let volley = proj.multishot() * auto.fire_rate.times_finished_this_tick();
 					prepare_auto_volley(volley, aim, transform.translation, &auto, proj, owner, &mut rng)
 						.spawn(&mut commands);
+					auto.fire_rate.tick(time.delta());
 				}
 			}
 			Weapon::Spread => {
-				spread.fire_rate.tick(time.delta());
-				if spread.fire_rate.finished() {
+				if !spread.fire_rate.finished() {
+					spread.fire_rate.tick(time.delta());
+				}
+				if firing.0 && spread.fire_rate.finished() {
 					vel.linvel += transform.up().xy() * -spread.recoil;
 					play_audio_onshot(&mut commands, audio.shoot_spread.clone());
 					let angle_offset = rng.range((-spread.accuracy)..spread.accuracy);
@@ -69,17 +74,25 @@ fn weapon_firing(
 					let volley = (proj.multishot() + spread.shot_count) * spread.fire_rate.times_finished_this_tick();
 					prepare_spread_volley(volley, adjusted_aim, transform.translation, &spread, proj, owner)
 						.spawn(&mut commands);
+					spread.fire_rate.tick(time.delta());
 				}
 			}
 			Weapon::Burst => {
+				if !firing.0 {
+					burst.cur_burst = 0;
+					burst.burst_rate.reset();
+				}
 				if burst.cur_burst == 0 {
-					burst.fire_rate.tick(time.delta());
-					if burst.fire_rate.finished() {
+					if !burst.fire_rate.finished() {
+						burst.fire_rate.tick(time.delta());
+					}
+					if firing.0 && burst.fire_rate.finished() {
 						burst.cur_burst = (proj.multishot() + burst.burst) * burst.fire_rate.times_finished_this_tick();
+						burst.fire_rate.tick(time.delta());
 					}
 				} else {
 					burst.burst_rate.tick(time.delta());
-					if burst.burst_rate.finished() {
+					if firing.0 && burst.burst_rate.finished() {
 						vel.linvel += transform.up().xy() * -burst.recoil;
 						play_audio_onshot(&mut commands, audio.shoot_burst.clone());
 						let shots = burst.burst_rate.times_finished_this_tick().min(burst.cur_burst);

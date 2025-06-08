@@ -13,4 +13,7 @@ pub struct AudioClips {
 	pub shoot_spread: Handle<AudioSource>,
 	pub start: Handle<AudioSource>,
 	pub dash: Handle<AudioSource>,
+	pub pickup: Handle<AudioSource>,
+	pub heal: Handle<AudioSource>,
+	pub weapon_switch: Handle<AudioSource>,
 }

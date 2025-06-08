@@ -54,11 +54,18 @@ impl Plugin for PlayerPlugin {
 		app.add_systems(Update, spawn_player.in_set(GameStartSystems));
 		app.add_systems(
 			Update,
-			(player_movement, look_at_mouse, fire_projectile, change_projectile).in_set(GameplaySystems),
+			(
+				player_movement,
+				look_at_mouse,
+				fire_projectile,
+				change_projectile,
+				health_regen,
+			)
+				.in_set(GameplaySystems),
 		);
 		app.add_systems(PostUpdate, gameover_transition.in_set(GameplaySystems));
-		#[cfg(debug_assertions)]
-		app.add_systems(PostUpdate, infinite_health.in_set(GameplaySystems));
+		// #[cfg(debug_assertions)]
+		// app.add_systems(PostUpdate, infinite_health.in_set(GameplaySystems));
 	}
 }
 
@@ -69,12 +76,21 @@ fn gameover_transition(player: Single<&Life, With<Player>>, mut next: ResMut<Nex
 	}
 }
 
+#[cfg(debug_assertions)]
 #[allow(dead_code)]
 fn infinite_health(player: Single<(&mut Health, &mut Life, &MaxHealth), With<Player>>) {
 	let (mut health, mut life, max) = player.into_inner();
 	health.0 = max.0;
 	life.0 = true;
 	life.1 = true;
+}
+
+fn health_regen(player: Single<(&mut Health, &Life, &MaxHealth), With<Player>>, time: Res<Time>) {
+	let (mut health, life, max) = player.into_inner();
+	if life.is_dead() {
+		return;
+	}
+	health.0 += max.0 * 0.02 * time.delta_secs();
 }
 
 fn spawn_player(

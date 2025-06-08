@@ -7,10 +7,13 @@ use crate::{
 		stats::{Health, MaxHealth},
 		tags::Pickup,
 		utils::Lifetime,
-		weapons::{Weapon, WeaponAuto, WeaponBurst, WeaponSpread},
+		weapons::{ProjectileType, Weapon, WeaponAuto, WeaponBurst, WeaponSpread},
 	},
-	plugins::player::Player,
-	resources::utils::{DeathEvent, DefaultProjTypes, RandomGen},
+	plugins::{player::Player, utils::play_audio_onshot},
+	resources::{
+		audio::AudioClips,
+		utils::{DeathEvent, DefaultProjTypes, RandomGen},
+	},
 	state_management::GameplaySystems,
 };
 
@@ -114,7 +117,7 @@ fn prepare_prefabs(mut commands: Commands, asset_server: Res<AssetServer>) {
 		stat,
 	});
 }
-const PICKUP_CHANCE: u32 = 10;
+const PICKUP_CHANCE: u32 = 5;
 fn process_deaths(
 	mut deaths: EventReader<DeathEvent>,
 	prefabs: Res<Prefabs>,
@@ -153,7 +156,7 @@ fn update_pickups(pickups: Query<(&mut Velocity, &Transform), With<Pickup>>, pla
 			vel.linvel = Vec2::ZERO;
 			continue;
 		}
-		vel.linvel = dir.normalize_or_zero() * 30.;
+		vel.linvel = dir.normalize_or_zero() * 40.;
 	}
 }
 
@@ -191,26 +194,47 @@ fn pickup_events(
 			&mut WeaponAuto,
 			&mut WeaponBurst,
 			&mut WeaponSpread,
+			&mut Weapon,
+			&mut ProjectileType,
 		),
 		With<Player>,
 	>,
 	mut projectiles: ResMut<DefaultProjTypes>,
+	mut commands: Commands,
+	audio: Res<AudioClips>,
 ) {
-	let (mut health, mut max_health, mut auto, mut burst, mut spread) = player.into_inner();
+	let (mut health, mut max_health, mut auto, mut burst, mut spread, mut player_weapon, mut proj_type) =
+		player.into_inner();
+	const UPGRADE_RATE: f32 = 0.05;
 	for event in events.read() {
 		match event.0 {
 			Pickup::Health => {
-				health.0 += 10.;
-				max_health.0 += 10.;
+				play_audio_onshot(&mut commands, audio.heal.clone());
+				max_health.0 += max_health.0 * 0.1;
+				health.0 += max_health.0;
 			}
-			Pickup::Weapon(weapon) => match weapon {
-				Weapon::Auto => auto.upgrade(0.1),
-				Weapon::Spread => spread.upgrade(0.1),
-				Weapon::Burst => burst.upgrade(0.1),
-				Weapon::Beam => todo!(),
-			},
+			Pickup::Weapon(weapon) => {
+				play_audio_onshot(&mut commands, audio.weapon_switch.clone());
+				auto.upgrade(UPGRADE_RATE);
+				spread.upgrade(UPGRADE_RATE);
+				burst.upgrade(UPGRADE_RATE);
+				match weapon {
+					Weapon::Auto => auto.upgrade(UPGRADE_RATE),
+					Weapon::Spread => spread.upgrade(UPGRADE_RATE),
+					Weapon::Burst => burst.upgrade(UPGRADE_RATE),
+					Weapon::Beam => todo!(),
+				}
+				*player_weapon = weapon;
+			}
 			Pickup::Stats => {
-				projectiles.upgrade(0.1);
+				play_audio_onshot(&mut commands, audio.pickup.clone());
+				projectiles.upgrade(UPGRADE_RATE);
+				*proj_type = match *proj_type {
+					ProjectileType::Basic { .. } => projectiles.basic,
+					ProjectileType::Piercing { .. } => projectiles.piercing,
+					ProjectileType::Bouncing { .. } => projectiles.bouncing,
+					ProjectileType::Grenade { .. } => projectiles.grenade,
+				};
 			}
 		};
 	}
