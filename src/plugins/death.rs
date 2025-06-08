@@ -144,7 +144,7 @@ fn sprial_spawner(
 						spiral.material.clone(),
 					),
 					AudioPlayer::new(audio.spiral.clone()),
-					PlaybackSettings::ONCE.with_volume(Volume::Linear(0.8)),
+					PlaybackSettings::ONCE.with_volume(Volume::Linear(0.5)),
 				));
 			}
 		}
