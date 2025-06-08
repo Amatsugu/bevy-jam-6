@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-#[derive(Component, Reflect, Default)]
+#[derive(Component, Reflect, Default, Clone, Copy)]
 #[require(WeaponAuto, WeaponBeam, WeaponBurst, WeaponSpread, ProjectileType, WeaponFiring)]
 pub enum Weapon {
 	#[default]
@@ -36,8 +36,15 @@ impl Default for WeaponAuto {
 			speed_multi: 1.,
 			fire_rate: Timer::from_seconds(1. / 5., TimerMode::Repeating),
 			accuracy: 5.,
-			recoil: 20.,
+			recoil: 10.,
 		}
+	}
+}
+
+impl WeaponAuto {
+	pub fn upgrade(&mut self, rate: f32) {
+		self.damage_multi += self.damage_multi * rate;
+		self.speed_multi += self.speed_multi * rate;
 	}
 }
 
@@ -66,6 +73,14 @@ impl Default for WeaponSpread {
 	}
 }
 
+impl WeaponSpread {
+	pub fn upgrade(&mut self, rate: f32) {
+		self.damage_multi += self.damage_multi * rate;
+		self.speed_multi += self.speed_multi * rate;
+		self.shot_count += 1;
+	}
+}
+
 #[derive(Component, Reflect)]
 pub struct WeaponBurst {
 	pub damage_multi: f32,
@@ -90,6 +105,14 @@ impl Default for WeaponBurst {
 			cur_burst: 0,
 			recoil: 20.,
 		}
+	}
+}
+
+impl WeaponBurst {
+	pub fn upgrade(&mut self, rate: f32) {
+		self.damage_multi += self.damage_multi * rate;
+		self.speed_multi += self.speed_multi * rate;
+		self.burst += 1;
 	}
 }
 
@@ -160,6 +183,60 @@ impl ProjectileType {
 			ProjectileType::Piercing { multishot, .. } => multishot,
 			ProjectileType::Bouncing { multishot, .. } => multishot,
 			ProjectileType::Grenade { multishot, .. } => multishot,
+		}
+	}
+	pub fn upgrade(&self, rate: f32) -> Self {
+		match self {
+			ProjectileType::Basic {
+				damage,
+				speed,
+				multishot,
+			} => ProjectileType::Basic {
+				damage: damage + damage * rate,
+				speed: speed + speed * rate,
+				multishot: multishot + 1,
+			},
+			ProjectileType::Piercing {
+				damage,
+				speed,
+				multishot,
+				penetration,
+			} => ProjectileType::Piercing {
+				damage: damage + damage * rate,
+				speed: speed + speed * rate,
+				multishot: multishot + 1,
+				penetration: penetration + 1,
+			},
+			ProjectileType::Bouncing {
+				damage,
+				speed,
+				multishot,
+				bounce_limit,
+			} => ProjectileType::Bouncing {
+				damage: damage + damage * rate,
+				speed: speed + speed * rate,
+				multishot: multishot + 1,
+				bounce_limit: bounce_limit + 1,
+			},
+			ProjectileType::Grenade {
+				damage,
+				speed,
+				multishot,
+				bounce_limit,
+				fuse,
+				drag,
+				explosive_range,
+				explosive_speed,
+			} => ProjectileType::Grenade {
+				damage: damage + damage * rate,
+				speed: speed + speed * rate,
+				multishot: multishot + 1,
+				bounce_limit: bounce_limit + 1,
+				fuse: (fuse - (fuse * rate)).max(1.),
+				explosive_range: explosive_range + explosive_range * rate,
+				explosive_speed: *explosive_speed,
+				drag: *drag,
+			},
 		}
 	}
 }

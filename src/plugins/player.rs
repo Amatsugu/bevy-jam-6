@@ -10,7 +10,7 @@ use crate::{
 		utils::Cleanable,
 		weapons::{ProjectileType, Weapon, WeaponFiring},
 	},
-	resources::utils::Fonts,
+	resources::utils::{DefaultProjTypes, Fonts},
 	state_management::{GameStartSystems, GameplayState, GameplaySystems},
 };
 
@@ -28,13 +28,13 @@ impl Plugin for PlayerPlugin {
 				multishot: 1,
 			},
 			bouncing: ProjectileType::Bouncing {
-				damage: 50.,
+				damage: 40.,
 				speed: 500.,
-				multishot: 1,
+				multishot: 2,
 				bounce_limit: 4,
 			},
 			grenade: ProjectileType::Grenade {
-				damage: 50.,
+				damage: 100.,
 				speed: 1000.,
 				multishot: 1,
 				bounce_limit: 5,
@@ -44,7 +44,7 @@ impl Plugin for PlayerPlugin {
 				explosive_speed: 300.,
 			},
 			piercing: ProjectileType::Piercing {
-				damage: 50.,
+				damage: 20.,
 				speed: 500.,
 				multishot: 1,
 				penetration: 5,
@@ -74,15 +74,7 @@ fn infinite_health(player: Single<(&mut Health, &mut Life, &MaxHealth), With<Pla
 	let (mut health, mut life, max) = player.into_inner();
 	health.0 = max.0;
 	life.0 = true;
-}
-
-#[derive(Resource, Reflect)]
-#[reflect(Resource)]
-struct DefaultProjTypes {
-	basic: ProjectileType,
-	piercing: ProjectileType,
-	bouncing: ProjectileType,
-	grenade: ProjectileType,
+	life.1 = true;
 }
 
 fn spawn_player(

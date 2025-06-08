@@ -39,11 +39,11 @@ impl Default for Health {
 }
 
 #[derive(Component, Reflect)]
-pub struct Life(pub bool);
+pub struct Life(pub bool, pub bool);
 
 impl Default for Life {
 	fn default() -> Self {
-		Life(true)
+		Life(true, false)
 	}
 }
 

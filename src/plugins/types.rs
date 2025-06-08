@@ -50,5 +50,6 @@ impl Plugin for TypesPlugin {
 		app.register_type::<WeaponBurst>();
 		app.register_type::<WeaponSpread>();
 		app.register_type::<ProjectileType>();
+		app.register_type::<Pickup>();
 	}
 }

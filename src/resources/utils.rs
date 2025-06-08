@@ -7,6 +7,8 @@ use rand::{
 };
 use rand_chacha::ChaChaRng;
 
+use crate::components::weapons::ProjectileType;
+
 #[derive(Resource)]
 pub struct RandomGen(pub ChaChaRng);
 
@@ -40,4 +42,32 @@ pub struct Fonts {
 	pub noto: Handle<Font>,
 	pub noto_regular: Handle<Font>,
 	pub noto_thin: Handle<Font>,
+}
+
+#[derive(Resource, Reflect, Default)]
+#[reflect(Resource)]
+pub struct KillCount(pub u32);
+
+#[derive(Event)]
+pub struct DeathEvent {
+	pub pos: Vec2,
+	pub is_player: bool,
+}
+
+#[derive(Resource, Reflect)]
+#[reflect(Resource)]
+pub struct DefaultProjTypes {
+	pub basic: ProjectileType,
+	pub piercing: ProjectileType,
+	pub bouncing: ProjectileType,
+	pub grenade: ProjectileType,
+}
+
+impl DefaultProjTypes {
+	pub fn upgrade(&mut self, rate: f32) {
+		self.basic = self.basic.upgrade(rate);
+		self.piercing = self.piercing.upgrade(rate);
+		self.bouncing = self.bouncing.upgrade(rate);
+		self.grenade = self.grenade.upgrade(rate);
+	}
 }

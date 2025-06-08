@@ -3,7 +3,10 @@ use bevy::prelude::*;
 use crate::{
 	components::utils::Cleanable,
 	plugins::utils::play_audio_onshot,
-	resources::{audio::AudioClips, utils::Fonts},
+	resources::{
+		audio::AudioClips,
+		utils::{Fonts, KillCount},
+	},
 	state_management::{GameOverState, GameOverSystems, GameplayState},
 };
 
@@ -28,6 +31,7 @@ fn spawn_menu(
 	mut next: ResMut<NextState<GameOverState>>,
 	fonts: Res<Fonts>,
 	audio: Res<AudioClips>,
+	kill_count: Res<KillCount>,
 ) {
 	commands.spawn((
 		Cleanable,
@@ -40,7 +44,17 @@ fn spawn_menu(
 		},
 		TextLayout::new_with_justify(JustifyText::Center),
 	));
-
+	commands.spawn((
+		Cleanable,
+		Transform::from_xyz(0.0, 0.0, 0.0),
+		Text2d::new(format!("Kills: {}", kill_count.0)),
+		TextFont {
+			font: fonts.noto_thin.clone(),
+			font_size: 20.,
+			..default()
+		},
+		TextLayout::new_with_justify(JustifyText::Center),
+	));
 	commands.spawn((
 		Cleanable,
 		Transform::from_xyz(0.0, -30., 0.0),

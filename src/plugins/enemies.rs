@@ -204,6 +204,7 @@ fn set_ai_charge_target(
 				tgt.look_and_move(transform.translation.xy() + info.charge_dir * 100.);
 				if info.cooldown.finished() {
 					life.0 = false;
+					life.1 = true;
 				}
 			}
 		}

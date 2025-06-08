@@ -21,8 +21,9 @@ use rand_chacha::ChaChaRng;
 use crate::{
 	components::{tags::MainCamera, utils::Cleanable},
 	plugins::{
-		effects::EffectsPlugin, game_over::GameOverPlugin, health::HealthPlugin, main_menu::MainMenuPlugin,
-		spawner::EnemySpawnerPlugin, types::TypesPlugin, ui::UIPlugin, weapons::WeaponsPlugin,
+		drops::DropsPlugin, effects::EffectsPlugin, game_over::GameOverPlugin, health::HealthPlugin,
+		main_menu::MainMenuPlugin, spawner::EnemySpawnerPlugin, types::TypesPlugin, ui::UIPlugin,
+		weapons::WeaponsPlugin,
 	},
 	resources::{
 		audio::AudioClips,
@@ -60,6 +61,7 @@ impl Plugin for GamePlugin {
 			MainMenuPlugin,
 			GameOverPlugin,
 			UIPlugin,
+			DropsPlugin,
 		));
 		app.add_systems(PreStartup, (setup, spwan_bounds, load_auido));
 		app.add_systems(PostStartup, disable_gravity);

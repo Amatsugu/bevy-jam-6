@@ -9,6 +9,7 @@ mod spawner;
 mod types;
 mod utils;
 pub use game::*;
+mod drops;
 mod game_over;
 mod health;
 mod main_menu;

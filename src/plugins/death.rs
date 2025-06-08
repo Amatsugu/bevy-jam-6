@@ -13,7 +13,10 @@ use crate::{
 		utils::Lifetime,
 	},
 	plugins::utils::play_audio_onshot,
-	resources::{audio::AudioClips, utils::RandomGen},
+	resources::{
+		audio::AudioClips,
+		utils::{DeathEvent, KillCount, RandomGen},
+	},
 	state_management::{GameOverSystems, GameplaySystems},
 };
 
@@ -23,9 +26,38 @@ pub struct DeathPlugin;
 
 impl Plugin for DeathPlugin {
 	fn build(&self, app: &mut App) {
+		app.init_resource::<KillCount>();
+		app.add_event::<DeathEvent>();
 		app.add_systems(Startup, init_meshes);
-		app.add_systems(Update, (death_scatter, sprial_spawner).in_set(GameplaySystems));
-		app.add_systems(Update, (death_scatter, sprial_spawner).in_set(GameOverSystems));
+		app.add_systems(
+			Update,
+			(death_events, death_scatter, sprial_spawner)
+				.chain()
+				.in_set(GameplaySystems),
+		);
+		app.add_systems(PostUpdate, (death_scatter, sprial_spawner).in_set(GameOverSystems));
+		app.add_systems(Update, kill_count.in_set(GameplaySystems));
+	}
+}
+
+fn kill_count(mut events: EventReader<DeathEvent>, mut kill_count: ResMut<KillCount>) {
+	for event in events.read() {
+		if !event.is_player {
+			kill_count.0 += 1;
+		}
+	}
+}
+
+fn death_events(query: Query<(&mut Life, &Transform, Option<&Player>)>, mut events: EventWriter<DeathEvent>) {
+	for (mut life, transform, player) in query {
+		if life.is_alive() || life.1 {
+			continue;
+		}
+		life.1 = true;
+		events.write(DeathEvent {
+			pos: transform.translation.xy(),
+			is_player: player.is_some(),
+		});
 	}
 }
 
@@ -38,7 +70,7 @@ struct Projectiles {
 fn init_meshes(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<ColorMaterial>>) {
 	commands.insert_resource(Projectiles {
 		mesh: meshes.add(Circle::new(2.)),
-		mat: materials.add(Color::linear_rgb(1.0, 0.0, 0.16)),
+		mat: materials.add(Color::linear_rgb(3.0, 0.0, 0.48)),
 	});
 }
 

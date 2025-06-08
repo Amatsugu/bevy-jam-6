@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use crate::{
 	components::{spawner::SpawnBatch, stats::MaxHealth, utils::Cleanable},
 	resources::utils::RandomGen,
@@ -138,7 +140,8 @@ fn prepare_prefabs(
 fn create_spawners(mut commands: Commands, prefabs: Res<Prefabs>) {
 	for i in 0..SPAWNER_COUNT {
 		let dir = (Vec2::from_angle((i as f32 * SPAWNER_ANGLE).to_radians()) * 400.).extend(0.);
-
+		let mut timer = Timer::from_seconds(10., TimerMode::Repeating);
+		timer.set_elapsed(Duration::from_secs(8));
 		commands.spawn((
 			Transform::from_translation(dir),
 			Cleanable,
@@ -148,7 +151,7 @@ fn create_spawners(mut commands: Commands, prefabs: Res<Prefabs>) {
 				prefabs: vec![prefabs.chaser, prefabs.charger, prefabs.hover],
 				spawn_effect: Entity::PLACEHOLDER,
 				spawn_range: 100.,
-				spawn_rate: Timer::from_seconds(10., TimerMode::Repeating),
+				spawn_rate: timer,
 				spawn_speed: Timer::from_seconds(0.5, TimerMode::Repeating),
 			},
 		));
@@ -186,6 +189,8 @@ fn spawners_batching(query: Query<(&mut Spawner, &mut SpawnBatch)>, time: Res<Ti
 		spawner.spawn_rate.tick(time.delta());
 		if spawner.spawn_rate.finished() {
 			batch.0 = rng.range(spawner.min_batch_size..spawner.max_batch_size);
+			spawner.min_batch_size += 1;
+			spawner.max_batch_size += batch.0;
 		}
 	}
 }

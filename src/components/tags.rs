@@ -1,6 +1,7 @@
 use bevy::prelude::*;
+use bevy_rapier2d::prelude::*;
 
-use crate::components::utils::Cleanable;
+use crate::components::{utils::Cleanable, weapons::Weapon};
 
 use super::stats::{Health, MaxHealth};
 
@@ -53,3 +54,12 @@ pub enum Owner {
 
 #[derive(Component)]
 pub struct MainMenu;
+
+#[derive(Component, Default, Reflect, Clone, Copy)]
+#[require(Sensor, RigidBody, Velocity, Cleanable)]
+pub enum Pickup {
+	#[default]
+	Health,
+	Weapon(Weapon),
+	Stats,
+}
