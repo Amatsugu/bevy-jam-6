@@ -44,7 +44,6 @@ impl Default for WeaponAuto {
 
 impl WeaponAuto {
 	pub fn upgrade(&mut self, rate: f32) {
-		self.damage_multi += self.damage_multi * rate;
 		self.speed_multi += self.speed_multi * rate;
 	}
 }
@@ -76,7 +75,6 @@ impl Default for WeaponSpread {
 
 impl WeaponSpread {
 	pub fn upgrade(&mut self, rate: f32) {
-		self.damage_multi += self.damage_multi * rate;
 		self.speed_multi += self.speed_multi * rate;
 		self.shot_count += 1;
 	}
@@ -111,7 +109,6 @@ impl Default for WeaponBurst {
 
 impl WeaponBurst {
 	pub fn upgrade(&mut self, rate: f32) {
-		self.damage_multi += self.damage_multi * rate;
 		self.speed_multi += self.speed_multi * rate;
 		self.burst += 1;
 	}
@@ -193,7 +190,7 @@ impl ProjectileType {
 				speed,
 				multishot,
 			} => ProjectileType::Basic {
-				damage: damage + damage * rate,
+				damage: *damage,
 				speed: speed + speed * rate,
 				multishot: multishot + 1,
 			},
@@ -203,7 +200,7 @@ impl ProjectileType {
 				multishot,
 				penetration,
 			} => ProjectileType::Piercing {
-				damage: damage + damage * rate,
+				damage: *damage,
 				speed: speed + speed * rate,
 				multishot: multishot + 1,
 				penetration: penetration + 1,
@@ -214,7 +211,7 @@ impl ProjectileType {
 				multishot,
 				bounce_limit,
 			} => ProjectileType::Bouncing {
-				damage: damage + damage * rate,
+				damage: *damage,
 				speed: speed + speed * rate,
 				multishot: multishot + 1,
 				bounce_limit: bounce_limit + 1,
@@ -229,7 +226,7 @@ impl ProjectileType {
 				explosive_range,
 				explosive_speed,
 			} => ProjectileType::Grenade {
-				damage: damage + damage * rate,
+				damage: *damage,
 				speed: speed + speed * rate,
 				multishot: multishot + 1,
 				bounce_limit: bounce_limit + 1,

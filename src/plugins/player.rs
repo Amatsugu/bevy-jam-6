@@ -90,7 +90,7 @@ fn health_regen(player: Single<(&mut Health, &Life, &MaxHealth), With<Player>>, 
 	if life.is_dead() {
 		return;
 	}
-	health.0 += max.0 * 0.02 * time.delta_secs();
+	health.0 += max.0 * 0.01 * time.delta_secs();
 }
 
 fn spawn_player(
