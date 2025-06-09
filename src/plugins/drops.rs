@@ -210,7 +210,7 @@ fn pickup_events(
 		match event.0 {
 			Pickup::Health => {
 				play_audio_onshot(&mut commands, audio.heal.clone());
-				max_health.0 += max_health.0 + 10.0;
+				max_health.0 += 10.0;
 				health.0 = max_health.0;
 			}
 			Pickup::Weapon(weapon) => {
